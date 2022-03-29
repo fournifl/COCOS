@@ -4,8 +4,10 @@ Created on Thu Sep  3 13:49:26 2020
 
 @author: gawehn
 """
+import matplotlib.pyplot as plt
 import numpy      as np
 import mat73
+import pickle
 import time
 
 from collections  import namedtuple
@@ -44,9 +46,20 @@ class Data():
     def get_Video(cls,label, startx = None, stopx = None, starty = None, stopy = None, step = None):
         print('load video data...', end =" ")
         start = time.time()
-        if label == 'wavecams_palavas':
+        if label == 'wavecams_palavas_cristal':
             if step is None: step = 1 #set default step
-            frames_wavecams = np.load('/home/florent/dev/COCOS/data/raw/palavas/cristal_1/Video_compressed_palavas_cristal1.npz')
+            frames_wavecams = np.load('/home/florent/dev/COCOS/data/raw/palavas/cristal_1/Video_compressed_palavas_cristal1_res_1.0.npz')
+            X           = frames_wavecams['X']
+            Y           = frames_wavecams['Y']
+            ImgSequence = frames_wavecams['RectMov_gray']
+            dx          = frames_wavecams['dx']
+            dt          = frames_wavecams['dt']
+            d_lims      = [0, 8]
+            diff_lims   = [-1.5, 1.5]
+            err_lims    = [0, 1]
+        if label == 'wavecams_palavas_stpierre':
+            if step is None: step = 1 #set default step
+            frames_wavecams = np.load('/home/florent/dev/COCOS/data/raw/palavas/st_pierre_3/Video_compressed_palavas_stpierre3.npz')
             X           = frames_wavecams['X']
             Y           = frames_wavecams['Y']
             ImgSequence = frames_wavecams['RectMov_gray']
@@ -55,7 +68,6 @@ class Data():
             d_lims      = [0, 16]
             diff_lims   = [-1.5, 1.5]
             err_lims    = [0, 2]
-
         if label == 'duck': # define label
             if step is None: step = 1 #set default step
             DuckArgus   = loadmat('../data/Video_Duck.mat')
@@ -154,7 +166,19 @@ class Data():
     def get_GroundTruth(opts, Video, grid, step = None):
         print('   load ground truth data...', end =" ")
         start = time.time()
-        if Video.label == 'duck':
+        if Video.label == 'wavecams_palavas_cristal':
+            f_litto3d = '/home/florent/Projects/Palavas-les-flots/Bathy/litto3d/litto3d_Palavas_epsg_32631_775_776_6271.pk'
+            WL = 0.60 - 0.307
+            litto3d = pickle.load(open(f_litto3d, 'rb'))
+            # plt.pcolor(litto3d['Xi'], litto3d['Yi'], litto3d['zi'], vmin=0, vmax=15)
+            Z_groundTruth = interpolate.griddata((np.ravel(litto3d['Xi']), np.ravel(litto3d['Yi'])), np.ravel(litto3d['zi']),
+                                                 (grid.X, grid.Y), method='linear')
+            D_groundTruth = -1*Z_groundTruth+WL
+            # plt.figure()
+            # plt.pcolor(grid.X, grid.Y, D_groundTruth, vmin=0, vmax=15)
+            # plt.show()
+
+        elif Video.label == 'duck':
             WL              = 0.077
             CRABDuck        = loadmat('../data/GroundTruth_Duck.mat')
             [Xmeas,Ymeas]   = np.meshgrid(CRABDuck['xm'],CRABDuck['ym'])
