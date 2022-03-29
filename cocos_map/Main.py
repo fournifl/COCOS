@@ -21,14 +21,19 @@ from Grid      import Grid
 from Plot      import Plot
 
 # Fieldsite
-fieldsite = 'wavecams_palavas'
+fieldsite = 'wavecams_palavas_cristal'
+# fieldsite = 'wavecams_palavas_stpierre'
 # ~ fieldsite = 'narrabeen'
 
 # load video data
 Video, PlotLims = Data.get_Video(fieldsite)
 
 # set options
-opts = Options(Video, CPU_speed = 'slow', parallel_flag = True, gc_kernel_sampnum = 80, f_scale = 0.012)
+opts = Options(Video, CPU_speed='fast', parallel_flag=True, gc_kernel_sampnum=80, f_scale=0.012)
+# opts = Options(Video, CPU_speed='fast', parallel_flag=True, gc_kernel_sampnum=80, f_scale=0.012, calcdmd='robust')
+# opts = Options(Video, CPU_speed = 'slow', parallel_flag = True, gc_kernel_sampnum = 80, f_scale    = 0.012)
+# opts = Options(Video, CPU_speed='accurate', parallel_flag = True, gc_kernel_sampnum = 80, f_scale = 0.012,
+#                calcdmd='robust')
 
 # INITIALIZE
 # prepare parallel computation of grid cells
@@ -113,6 +118,7 @@ while frame_start+opts.Nt <= Video.ImgSequence.shape[2]: #(remove <= tt for unli
     if cnt > 0:
         try:
             plot.results(opts, grid, Results, KalObj, InvStg, PlotLims.d_lims, PlotLims.diff_lims, PlotLims.err_lims, InvObj.kernel_samp, (dmd.A_fft, dmd.omegas_fft), (dmd.b_fourier,dmd.omega), t_shift)
+            # plot.results_only_bathy(grid, KalObj, t_shift)
         except:
             print('no plot. probably empty results')
 
