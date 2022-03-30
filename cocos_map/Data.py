@@ -16,6 +16,8 @@ from scipy        import interpolate,integrate
 from scipy.signal import detrend, hilbert
 from matplotlib import path
 
+from simple_utils import optional_print as op_print
+
 class Data():
     def __init__():
         pass
@@ -44,7 +46,7 @@ class Data():
 
     @classmethod
     def get_Video(cls,label, cam_name, startx = None, stopx = None, starty = None, stopy = None, step = None):
-        print('load video data...', end =" ")
+        op_print('load video data...', end =" ")
         start = time.time()
         if label == 'wavecams_palavas_cristal':
             if step is None: step = 1 #set default step
@@ -160,11 +162,11 @@ class Data():
         m,n,l = ImgSequence[ix_y,ix_x,:].shape
 
         end = time.time()
-        print('CPU time: {} s'.format(np.round((end-start)*100)/100))
+        op_print('CPU time: {} s'.format(np.round((end-start)*100)/100))
         return Data.set_Video(X[ix_y,ix_x], Y[ix_y,ix_x], ImgSequence[ix_y,ix_x,:], m, n, l, dx*step, dt, label), Data.set_plot_limits(d_lims,diff_lims,err_lims)
 
     def get_GroundTruth(opts, Video, grid, step = None):
-        print('   load ground truth data...', end =" ")
+        op_print('   load ground truth data...', end =" ")
         start = time.time()
         if Video.label == 'wavecams_palavas_cristal':
             f_litto3d = '/home/florent/Projects/Palavas-les-flots/Bathy/litto3d/litto3d_Palavas_epsg_32631_775_776_6271.pk'
@@ -225,14 +227,14 @@ class Data():
             Z_groundTruth   = interpolate.griddata((np.ravel(Xmeas), np.ravel(Ymeas)), np.ravel(ErwinPortT['Zi']),(grid.X, grid.Y),method='linear')
             D_groundTruth   = -1*Z_groundTruth+WL
         else:
-            print('No ground truth depth provided')
+            op_print('No ground truth depth provided')
             D_groundTruth = np.nan
         try:
             D_groundTruth[D_groundTruth<opts.dlims[0]] = np.nan
         except:
-            print('no gorund truth')
+            op_print('no gorund truth')
 
         end = time.time()
-        print('CPU time: {} s'.format(np.round((end-start)*100)/100))
+        op_print('CPU time: {} s'.format(np.round((end-start)*100)/100))
 
         return D_groundTruth
