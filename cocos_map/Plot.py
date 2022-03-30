@@ -282,6 +282,7 @@ class Plot:
         gc_kernel = gc_kernel.astype(float) * -1
         gc_kernel[int(gc_kernel.shape[0] / 2), int(gc_kernel.shape[1] / 2)] = 1  # np.sum(gc_kernel)
         gc_kernel[gc_kernel == 0] = np.nan
+        
         im8 = self.ax8.imshow(gc_kernel, cmap='jet', origin='lower')
 
         fft_freqlims_ID = (fft_spectrum[1] / (2 * np.pi) > opts.freqlims[1]) & (
@@ -289,10 +290,6 @@ class Plot:
         im9 = self.ax9.plot(fft_spectrum[1][fft_freqlims_ID], fft_spectrum[0][fft_freqlims_ID], 's-',
                             color=(0.4, 0.9, 0))
         im9b = self.ax9.plot(dmd_spectrum[1], dmd_spectrum[0], '*-', color=(1.0, 0.5, 0))
-        print('pouet')
-        print(dmd_spectrum[1])
-        print(dmd_spectrum[0])
-        print('ouhbi')
 
         im10 = self.ax10.stem(self.itern, self.t_iter)  # ,'|-',color = (0.4,0.9,0)
 
