@@ -19,17 +19,33 @@ from Inversion import Inversion
 from Kalman    import Kalman
 from Grid      import Grid
 from Plot      import Plot
+from pathlib import Path
+
+
+# execution options
+t0 = time.time()
+plot_results = False
+save_results = True
+cpu_speed = 'fast' #'fast','normal','slow', 'accurate', 'exact'
+calcmdmd = 'standard' # standard or robust
+
 
 # Fieldsite
 fieldsite = 'wavecams_palavas_cristal'
 # fieldsite = 'wavecams_palavas_stpierre'
 # ~ fieldsite = 'narrabeen'
+cam_name = 'cristal_1'
+
+# output directory
+output_dir = f'../results/{fieldsite}/{cam_name}'
+Path(output_dir).mkdir(parents=True, exist_ok=True)
 
 # load video data
-Video, PlotLims = Data.get_Video(fieldsite)
+Video, PlotLims = Data.get_Video(fieldsite, cam_name)
 
 # set options
-opts = Options(Video, CPU_speed='fast', parallel_flag=True, gc_kernel_sampnum=80, f_scale=0.012)
+opts = Options(Video, CPU_speed=cpu_speed, calcmdmd=calcmdmd, parallel_flag=True, gc_kernel_sampnum=80, f_scale=0.012)
+# opts = Options(Video, CPU_speed='fast', parallel_flag=True, gc_kernel_sampnum=80, f_scale=0.012)
 # opts = Options(Video, CPU_speed='fast', parallel_flag=True, gc_kernel_sampnum=80, f_scale=0.012, calcdmd='robust')
 # opts = Options(Video, CPU_speed = 'slow', parallel_flag = True, gc_kernel_sampnum = 80, f_scale    = 0.012)
 # opts = Options(Video, CPU_speed='accurate', parallel_flag = True, gc_kernel_sampnum = 80, f_scale = 0.012,
@@ -53,17 +69,28 @@ dmd     = OptDMD(opts, alpha0 = None)
 # initialize Kalman filter
 KalObj  = Kalman(opts, grid)
 # initialize plotting
-plot    = Plot(opts, Video, grid, step = None)
+if plot_results:
+    plot = Plot(opts, Video, grid, step = None)
 
-# preallocation
+# preallocation: OPTIONAL: for saving results
 # -------------
-t_iter = [];                        # OPTIONAL: for saving results
-Dk = [];    Uk = [];    Vk = [];    # OPTIONAL: for saving results
-Cxk = [];   Cyk = [];               # OPTIONAL: for saving results
+t_iter = []
+Dk = []
+Uk = []
+Vk = []
+Cxk = []
+Cyk = []
+n_used_layers_k = []
+results_c_omega_k = []
+fft_spectrum_k = []
+dmd_spectrum_k = []
+t_shift_k = []
+d_K_errors = []
+
 
 # PROCESS
-frame_start     = 0
-cnt             = 0
+frame_start = 0
+cnt = 0
 while frame_start+opts.Nt <= Video.ImgSequence.shape[2]: #(remove <= tt for unlimited analysis)
     print('\n --------------- START Update #{:} ---------------\n'.format(cnt+1))
     t_real_start    = time.time()
@@ -115,23 +142,54 @@ while frame_start+opts.Nt <= Video.ImgSequence.shape[2]: #(remove <= tt for unli
     else:
         frame_start = frame_start+opts.frame_int
     # simple visualization of results
-    if cnt > 0:
-        try:
-            plot.results(opts, grid, Results, KalObj, InvStg, PlotLims.d_lims, PlotLims.diff_lims, PlotLims.err_lims, InvObj.kernel_samp, (dmd.A_fft, dmd.omegas_fft), (dmd.b_fourier,dmd.omega), t_shift)
-            # plot.results_only_bathy(grid, KalObj, t_shift)
-        except:
-            print('no plot. probably empty results')
+    if plot_results:
+        if cnt > 0:
+            try:
+                plot.results(opts, grid, Results, KalObj, InvStg, PlotLims.d_lims, PlotLims.diff_lims, PlotLims.err_lims, InvObj.kernel_samp, (dmd.A_fft, dmd.omegas_fft), (dmd.b_fourier,dmd.omega), t_shift)
+                # plot.results_only_bathy(grid, KalObj, t_shift)
+            except:
+                print('no plot. probably empty results')
 
-# OPTIONAL: SAVE RESULTS
-    # save data from update for postprocessing
-#     t_iter.append(t)
-#     Dk.append(np.copy(KalObj.derrt_prev))
-#     Uk.append(np.copy(KalObj.uerrt_prev))
-#     Vk.append(np.copy(KalObj.verrt_prev))
-#     Cxk.append(np.copy(KalObj.cxerrt_prev))
-#     Cyk.append(np.copy(KalObj.cyerrt_prev))
-# # save other
-# Cxy_omega   = Results.c_omega
-# Dgt         = Data.get_GroundTruth(opts, Video, grid, step = None)
-#
-# np.savez('../results/' + fieldsite + '_CPU_speed_'+ opts.CPU_speed,    t_iter = t_iter, Dk = Dk, Uk = Uk, Vk = Vk, Cxk = Cxk, Cyk = Cyk, Cxy_omega = Cxy_omega, Dgt = Dgt, grid_dx = grid.dx, grid_X = grid.X, grid_Y = grid.Y, grid_Rows_ctr = grid.Rows_ctr, grid_Cols_ctr = grid.Cols_ctr)
+    if save_results:
+        # save data from update for postprocessing
+        t_iter.append(t)
+        # Dk.append(np.copy(KalObj.derrt_prev))
+        Dk.append(np.reshape(np.copy(KalObj.derrt_prev)[0, :], (grid.Numrows, grid.Numcols), order='F'))
+        # Uk.append(np.copy(KalObj.uerrt_prev))
+        Uk.append(np.flipud(np.reshape(np.copy(KalObj.uerrt_prev)[0, :], (grid.Numrows, grid.Numcols), order="F")))
+        # Vk.append(np.copy(KalObj.verrt_prev))
+        Vk.append(np.flipud(np.reshape(np.copy(KalObj.verrt_prev)[0, :], (grid.Numrows,grid.Numcols), order="F")))
+        Cxk.append(np.copy(KalObj.cxerrt_prev))
+        Cyk.append(np.copy(KalObj.cyerrt_prev))
+
+        n_used_layers = [np.mean([len(lis) for lis in line]) for line in InvStg.omega_store]
+        n_used_layers_k.append(np.reshape(n_used_layers, (grid.Numrows, grid.Numcols), order='F'))
+        results_c_omega_k = Results.c_omega
+        fft_spectrum_k.append((dmd.A_fft, dmd.omegas_fft))
+        dmd_spectrum_k.append((dmd.b_fourier,dmd.omega))
+        t_shift_k.append(t_shift)
+        d_K_errors_tmp = KalObj.derrt_prev[1, :]
+        d_K_errors_tmp = np.reshape(d_K_errors_tmp, (grid.Numrows, grid.Numcols), order='F')
+        d_K_errors.append(d_K_errors_tmp)
+
+t1 = time.time()
+exec_time = int(t1 - t0)
+
+if save_results:
+    # save other
+    gc_kernel = InvObj.kernel_samp
+    gc_kernel = gc_kernel.astype(float) * -1
+    gc_kernel[int(gc_kernel.shape[0] / 2), int(gc_kernel.shape[1] / 2)] = 1
+    gc_kernel[gc_kernel == 0] = np.nan
+    Cxy_omega   = Results.c_omega
+    Dgt         = Data.get_GroundTruth(opts, Video, grid, step = None)
+    numrows = np.asarray(grid.Numrows)
+    numcols = np.asarray(grid.Numcols)
+    # save in npz compressed format
+    np.savez_compressed(f'{output_dir}/results_CPU_speed_{opts.CPU_speed}_calcdmd_{opts.calcdmd}_exec_time_'
+                        f'{exec_time}_s', t_iter=t_iter, Dk=Dk, Uk=Uk, Vk=Vk, Cxk=Cxk, Cyk=Cyk, Cxy_omega=Cxy_omega,
+                        Dgt=Dgt, grid_dx=grid.dx, grid_X=grid.X, grid_Y=grid.Y, grid_Rows_ctr=grid.Rows_ctr,
+                        grid_Cols_ctr=grid.Cols_ctr,
+                        n_used_layers_k=n_used_layers_k, results_c_omega_k=results_c_omega_k,
+                        fft_spectrum_k=fft_spectrum_k, dmd_spectrum_k=dmd_spectrum_k, t_shift_k=t_shift_k,
+                        d_K_errors=d_K_errors, gc_kernel=gc_kernel)
