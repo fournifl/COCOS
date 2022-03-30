@@ -20,7 +20,7 @@ from Kalman    import Kalman
 from Grid      import Grid
 from Plot      import Plot
 from pathlib import Path
-
+from simple_utils import optional_print as op_print
 
 # execution options
 t0 = time.time()
@@ -54,7 +54,6 @@ opts = Options(Video, CPU_speed=cpu_speed, calcmdmd=calcmdmd, parallel_flag=True
 # INITIALIZE
 # prepare parallel computation of grid cells
 def gc_walk_unwrap_self(arg, **kwarg):      #__main__ function for inversion
-    #print(__name__)
     return Inversion.gc_walk(*arg, **kwarg)
 # initialize grid
 grid = Grid(Video, opts)
@@ -92,7 +91,7 @@ d_K_errors = []
 frame_start = 0
 cnt = 0
 while frame_start+opts.Nt <= Video.ImgSequence.shape[2]: #(remove <= tt for unlimited analysis)
-    print('\n --------------- START Update #{:} ---------------\n'.format(cnt+1))
+    op_print('\n --------------- START Update #{:} ---------------\n'.format(cnt+1))
     t_real_start    = time.time()
     t               = (frame_start + np.round(opts.Nt/2))*Video.dt
     # make timestamps of frame sequence
@@ -103,11 +102,11 @@ while frame_start+opts.Nt <= Video.ImgSequence.shape[2]: #(remove <= tt for unli
         # get Dynamic Modes
         dmd.get_dynamic_modes()
     except:
-        print('previous local minimizer and re-initialized minimizer failed')
-        print('try next image sequence?')
+        op_print('previous local minimizer and re-initialized minimizer failed')
+        op_print('try next image sequence?')
         t_real_end = time.time()
         t_shift = t_real_end - t_real_start
-        print('iteration time {:} sec \n '.format(t_shift))
+        op_print('iteration time {:} sec \n '.format(t_shift))
         cnt += 1
         if opts.frame_int == 'OnTheFly':
             frame_start = frame_start+int(t_shift/Video.dt)
@@ -148,7 +147,7 @@ while frame_start+opts.Nt <= Video.ImgSequence.shape[2]: #(remove <= tt for unli
                 plot.results(opts, grid, Results, KalObj, InvStg, PlotLims.d_lims, PlotLims.diff_lims, PlotLims.err_lims, InvObj.kernel_samp, (dmd.A_fft, dmd.omegas_fft), (dmd.b_fourier,dmd.omega), t_shift)
                 # plot.results_only_bathy(grid, KalObj, t_shift)
             except:
-                print('no plot. probably empty results')
+                op_print('no plot. probably empty results')
 
     if save_results:
         # save data from update for postprocessing
