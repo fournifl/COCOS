@@ -43,12 +43,12 @@ class Data():
         return PlotLims
 
     @classmethod
-    def get_Video(cls,label, startx = None, stopx = None, starty = None, stopy = None, step = None):
+    def get_Video(cls,label, cam_name, startx = None, stopx = None, starty = None, stopy = None, step = None):
         print('load video data...', end =" ")
         start = time.time()
         if label == 'wavecams_palavas_cristal':
             if step is None: step = 1 #set default step
-            frames_wavecams = np.load('/home/florent/dev/COCOS/data/raw/palavas/cristal_1/Video_compressed_palavas_cristal1_res_1.0.npz')
+            frames_wavecams = np.load('/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/Video_compressed_palavas_{cam_name}_res_1.0.npz'.format(cam_name=cam_name))
             X           = frames_wavecams['X']
             Y           = frames_wavecams['Y']
             ImgSequence = frames_wavecams['RectMov_gray']
