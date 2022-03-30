@@ -11,6 +11,7 @@ from matplotlib import cm
 from matplotlib.colors import Normalize
 import numpy as np
 from Data import Data
+from simple_utils import optional_print as op_print
 # =============================================================================
 # from matplotlib.animation import FuncAnimation
 # from copy import copy
@@ -20,7 +21,7 @@ from Data import Data
 class Plot:
 
     def __init__(self, opts, Video, grid, step):
-        print('initialize plotting...')
+        op_print('initialize plotting...')
         self.ini_colorbar = False
 
         # load ground truth data
@@ -64,7 +65,7 @@ class Plot:
 #         ax4     = fig.add_subplot(3,5,(5,10))
 # =============================================================================
     def results_orig(self, opts, grid, Results, Kalman, InvStg, d_lims, diff_lims, err_lims, gc_kernel, fft_spectrum, dmd_spectrum, t_shift):
-        print('plot update...')
+        op_print('plot update...')
         self.iter_now   = self.iter_now + 1
         self.itern      = np.append(self.itern,self.iter_now)
         self.t_iter     = np.append(self.t_iter,t_shift)
@@ -195,7 +196,7 @@ class Plot:
 
     def results(self, opts, grid, Results, Kalman, InvStg, d_lims, diff_lims, err_lims, gc_kernel, fft_spectrum,
                     dmd_spectrum, t_shift):
-        print('plot update...')
+        op_print('plot update...')
         self.iter_now = self.iter_now + 1
         self.itern = np.append(self.itern, self.iter_now)
         self.t_iter = np.append(self.t_iter, t_shift)
@@ -282,7 +283,7 @@ class Plot:
         gc_kernel = gc_kernel.astype(float) * -1
         gc_kernel[int(gc_kernel.shape[0] / 2), int(gc_kernel.shape[1] / 2)] = 1  # np.sum(gc_kernel)
         gc_kernel[gc_kernel == 0] = np.nan
-        
+
         im8 = self.ax8.imshow(gc_kernel, cmap='jet', origin='lower')
 
         fft_freqlims_ID = (fft_spectrum[1] / (2 * np.pi) > opts.freqlims[1]) & (
