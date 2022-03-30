@@ -9,11 +9,12 @@ import pdb
 import numpy as np
 import time
 from joblib      import Parallel, delayed
+from simple_utils import optional_print as op_print
 
 class Grid:
 
     def __init__(self, Video, opts):
-        print('initialize grid...')
+        op_print('initialize grid...')
         # intialize grid for given Video domain
         if opts.grid_dx is not None: # if grid spacing (in [m]) is imposed use that value
             gc_shift = int(round(opts.grid_dx/Video.dx))
@@ -42,11 +43,11 @@ class Grid:
         y               = opts.Origin[1] + self.Rows_ctr*Video.dx
         [self.X,self.Y] = np.meshgrid(x,y)
 
-        print('   grid cell spacing = {} m'.format(self.dx))
+        op_print('   grid cell spacing = {} m'.format(self.dx))
 
     def get_gcSizes(self, Video, opts, Omegas, mask):
         def get_gcSize_perOmega(self, opts, Omegas, dx, gc_OffWaveLengths = 2):
-            print('   get subdomain size per mode frequency for', gc_OffWaveLengths, 'offshore wave length(s)...')
+            op_print(('   get subdomain size per mode frequency for', gc_OffWaveLengths, 'offshore wave length(s)...'))
             gc_size_perOmega    = []
             for omega in Omegas:
                 T   = 2*np.pi/omega
@@ -61,7 +62,7 @@ class Grid:
             return np.array(gc_size_perOmega)
 
         def fix_boundaries(self, Video, gc_sz_w, gc_sz_w_min):
-            print('   fix subdomain sizes near frame boundaries...', end =" ")
+            op_print('   fix subdomain sizes near frame boundaries...', end =" ")
             start = time.time()
             #prealloc
             # get matrices of vertical and horizontal gc-binsizes
@@ -114,10 +115,10 @@ class Grid:
             self.gc_sz_v[zeros_IX] = 0
             self.gc_sz_h[zeros_IX] = 0
             end = time.time()
-            print('CPU time: {} s'.format(np.round((end-start)*100)/100))
+            op_print('CPU time: {} s'.format(np.round((end-start)*100)/100))
 
         def fix_mask_and_sampling(self, Video, opts, Omegas, mask, gc_sz_w_min):
-            print('   fix subdomain sizes near (masked) areas with no data and \n   determine optimal subdomain resolution...', end =" ")
+            op_print('   fix subdomain sizes near (masked) areas with no data and \n   determine optimal subdomain resolution...', end =" ")
             start = time.time()
             #intitialize
             self.smpstep        = np.zeros([self.Numrows, self.Numcols, self.Nw], dtype = 'float16')
@@ -129,13 +130,13 @@ class Grid:
                 gcr = (gc-(gcc*self.Numrows)).astype(int)
                 self.gc_sz_v[gcr,gcc,:], self.gc_sz_h[gcr,gcc,:], self.smpstep[gcr,gcc,:], self.OffWaveLengths[gcr,gcc,:] = self.gc_walk_fix_mask_and_sampling(gc, Video, opts, Omegas, mask, gc_sz_w_min)
             end = time.time()
-            print('CPU time: {} s'.format(np.round((end-start)*100)/100))
+            op_print('CPU time: {} s'.format(np.round((end-start)*100)/100))
 
-        print('get subdomain size and resolution per mode...')
+        op_print('get subdomain size and resolution per mode...')
         start = time.time()
         gc_sz_w     = get_gcSize_perOmega(self, opts, Omegas, Video.dx, gc_OffWaveLengths = opts.gc_OffWaveLengths) #important for accuracy!! --> bad for speed
         T           = np.round(1/(Omegas/(2*np.pi))*10)/10
-        print('      desired gc sizes for wave-periods {}-{} s: {}'.format(np.min(T),np.max(T),np.flipud(gc_sz_w)))
+        op_print('      desired gc sizes for wave-periods {}-{} s: {}'.format(np.min(T),np.max(T),np.flipud(gc_sz_w)))
         gc_sz_w_min = get_gcSize_perOmega(self, opts, Omegas, Video.dx, gc_OffWaveLengths = 1)
 
         self.Nw         = len(Omegas)
@@ -146,7 +147,7 @@ class Grid:
         fix_mask_and_sampling(self, Video, opts, Omegas, mask, gc_sz_w_min)
         self.mask       = np.all(self.gc_sz_h == 0, axis = -1) | np.all(self.gc_sz_v == 0, axis = -1)
         end = time.time()
-        print('CPU time: {} s'.format(np.round((end-start)*100)/100))
+        op_print('CPU time: {} s'.format(np.round((end-start)*100)/100))
 
     def get_gc_OffWaveLengths(self,omega, dx, Npx):
         T   = 2*np.pi/omega
