@@ -14,24 +14,24 @@ import pickle as pk
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-
 # sitename
-sitename = 'palavas_cristal1'
+cam_name = 'cristal_2'
+sitename = f'palavas_{cam_name}'
+# sitename = 'palavas_stpierre_3'
 
 # data_dir
-data_dir = Path('/home/florent/dev/COCOS/data/raw/palavas/cristal_1/')
+data_dir = Path(f'/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/')
+# data_dir = Path('/home/florent/dev/COCOS/data/raw/palavas/st_pierre_3/')
 
 # input projected frames
 # dir_frames = '/home/florent/dev/COCOS/data/raw/palavas/cristal_1/frames_projected/'
 dir_frames = data_dir.joinpath('frames_projected/')
 
-# ls = sorted(glob(dir_frames + 'P*.png'))
 ls = sorted(dir_frames.rglob("P*.png"))
 
 # number of used frames
-# n = 200
-# n = 400
-n = None
+n = 150
+# n = None
 if n is not None:
     ls = ls[0:n]
 else:
@@ -48,11 +48,11 @@ dt = 0.5
 f_coords = data_dir.joinpath('coords_projected_grid.pkl')
 grid_coords = pickle.load(open(f_coords, 'rb'), encoding='latin-1')
 
-# grid_coords = pickle.load(open('/home/florent/dev/COCOS/data/raw/palavas/cristal_1/coords_projected_grid.pkl', 'rb'), encoding='latin-1')
 dx = round(grid_coords['utmx_projected_grid'][0, 1] - grid_coords['utmx_projected_grid'][0, 0], 2)
 
 # georef
-georef = json.load(open('/home/florent/ownCloud/Projets/SuiviVideo/Palavas/cameras/CAM16/info/georef/georef.json'))
+georef = json.load(open('/home/florent/ownCloud/Projets/SuiviVideo/Palavas/cameras/CAM18/info/georef/georef.json'))
+# georef = json.load(open('/home/florent/ownCloud/Projets/SuiviVideo/Palavas/cameras/CAM21/info/georef/georef.json'))
 
 # update grid projection coordinates with camera position
 camera_position =  georef['Grid_Coordinate_System_Offset']
@@ -75,14 +75,9 @@ for i, f in enumerate(ls):
     img = cv2.imread(str(f))
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     output_dict['RectMov_gray'][:, :, i] = img_gray
-    # plt.imshow(img_gray)
-    # plt.show()
-    # pdb.set_trace()
 
-# save output dictionnary
-# pickle.dump(output_dict, open(data_dir.joinpath('Video_' + sitename + '.pkl'), 'wb'))
+# save
 np.savez_compressed(data_dir.joinpath('Video_compressed_' + sitename), RectMov_gray=output_dict['RectMov_gray'],
                     X=output_dict['X'], Y=output_dict['Y'], dx=output_dict['dx'], dt=output_dict['dt'])
-# np.savez(data_dir.joinpath('Video_' + sitename), RectMov_gray=output_dict['RectMov_gray'],
-#                     X=output_dict['X'], Y=output_dict['Y'], dx=output_dict['dx'], dt=output_dict['dt'])
+
 
