@@ -59,9 +59,20 @@ class Data():
             d_lims      = [0, 8]
             diff_lims   = [-1.5, 1.5]
             err_lims    = [0, 1]
+        if label == 'wavecams_palavas_cristal_merged':
+            if step is None: step = 1 #set default step
+            frames_wavecams = np.load('/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/Video_compressed_palavas_{cam_name}_res_1.0.npz'.format(cam_name=cam_name))
+            X           = frames_wavecams['X']
+            Y           = frames_wavecams['Y']
+            ImgSequence = frames_wavecams['RectMov_gray']
+            dx          = frames_wavecams['dx']
+            dt          = frames_wavecams['dt']
+            d_lims      = [0, 8]
+            diff_lims   = [-1.5, 1.5]
+            err_lims    = [0, 1]
         if label == 'wavecams_palavas_stpierre':
             if step is None: step = 1 #set default step
-            frames_wavecams = np.load('/home/florent/dev/COCOS/data/raw/palavas/st_pierre_3/Video_compressed_palavas_stpierre3.npz')
+            frames_wavecams = np.load(f'/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/Video_compressed_palavas_{cam_name}.npz')
             X           = frames_wavecams['X']
             Y           = frames_wavecams['Y']
             ImgSequence = frames_wavecams['RectMov_gray']
@@ -169,16 +180,21 @@ class Data():
         op_print('   load ground truth data...', end =" ")
         start = time.time()
         if Video.label == 'wavecams_palavas_cristal':
-            f_litto3d = '/home/florent/Projects/Palavas-les-flots/Bathy/litto3d/litto3d_Palavas_epsg_32631_775_776_6271.pk'
+            f_litto3d = '/home/florent/Projects/Palavas-les-flots/Bathy/litto3d/cristal/litto3d_Palavas_epsg_32631_775_776_6271.pk'
             WL = 0.60 - 0.307
             litto3d = pickle.load(open(f_litto3d, 'rb'))
             # plt.pcolor(litto3d['Xi'], litto3d['Yi'], litto3d['zi'], vmin=0, vmax=15)
             Z_groundTruth = interpolate.griddata((np.ravel(litto3d['Xi']), np.ravel(litto3d['Yi'])), np.ravel(litto3d['zi']),
                                                  (grid.X, grid.Y), method='linear')
             D_groundTruth = -1*Z_groundTruth+WL
-            # plt.figure()
-            # plt.pcolor(grid.X, grid.Y, D_groundTruth, vmin=0, vmax=15)
-            # plt.show()
+        if Video.label == 'wavecams_palavas_stpierre':
+            f_litto3d = '/home/florent/Projects/Palavas-les-flots/Bathy/litto3d/st_pierre/litto3d_Palavas_st_pierre_epsg_32631_774_775_6270.pk'
+            WL = 0.60 - 0.307
+            litto3d = pickle.load(open(f_litto3d, 'rb'))
+            # plt.pcolor(litto3d['Xi'], litto3d['Yi'], litto3d['zi'], vmin=0, vmax=15)
+            Z_groundTruth = interpolate.griddata((np.ravel(litto3d['Xi']), np.ravel(litto3d['Yi'])), np.ravel(litto3d['zi']),
+                                                 (grid.X, grid.Y), method='linear')
+            D_groundTruth = -1*Z_groundTruth+WL
 
         elif Video.label == 'duck':
             WL              = 0.077
@@ -229,10 +245,10 @@ class Data():
         else:
             op_print('No ground truth depth provided')
             D_groundTruth = np.nan
-        try:
-            D_groundTruth[D_groundTruth<opts.dlims[0]] = np.nan
-        except:
-            op_print('no gorund truth')
+        # try:
+        #     D_groundTruth[D_groundTruth<opts.dlims[0]] = np.nan
+        # except:
+        #     op_print('no gorund truth')
 
         end = time.time()
         op_print('CPU time: {} s'.format(np.round((end-start)*100)/100))
