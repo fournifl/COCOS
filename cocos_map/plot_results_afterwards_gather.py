@@ -121,7 +121,7 @@ def interpolate_lidar_data_on_gathered_grid(lidar_data, X, Y, mask):
 
 def plot_gathered_results_save(X, Y, results_Dk_gathered, lidar_data, results, cam_names, depth_lims, diff_depth_lims,
                           output_dir_plot, emprise, k):
-    fig, ax = plt.subplots(2, 3, figsize=(22, 8))
+    fig, ax = plt.subplots(1, 3, figsize=(22, 8))
     diff_depth_ground_truth = results_Dk_gathered - lidar_data
     im1 = ax[0].pcolor(X, Y, results_Dk_gathered, cmap='jet_r')
     im2 = ax[1].pcolor(X, Y, lidar_data, cmap='jet_r')
@@ -136,35 +136,25 @@ def plot_gathered_results_save(X, Y, results_Dk_gathered, lidar_data, results, c
     im2.set_clim([depth_lims[0], depth_lims[1]])
     im3.set_clim([diff_depth_lims[0], diff_depth_lims[1]])
 
-    for i, cam_name in cam_names:
-        ax[i].axis('equal')
-        ax[i].set_title(f'depth {cam_name}  [m]')
-        ax[i].set_ylabel('y [m]')
-        ax[i].set_xlabel('x [m]')
-        ax[i].set_xlim([emprise[0], emprise[1]])
-        ax[i].set_ylim([emprise[2], emprise[3]])
-        im = ax[i].pcolor(results[cam_name]['grid_X'], results[cam_name]['grid_Y'], results[cam_name]['Dk'][k], cmap='jet_r')
-        im.set_clim([depth_lims[0], depth_lims[1]])
-
-    ax[3].set_title('depth gathered [m]')
-    ax[3].axis('equal')
-    ax[3].set_title('depth gathered [m]')
-    ax[3].set_ylabel('y [m]')
-    ax[3].set_xlabel('x [m]')
-    ax[3].set_xlim([emprise[0], emprise[1]])
-    ax[3].set_ylim([emprise[2], emprise[3]])
-    ax[4].axis('equal')
-    ax[4].set_title('ground truth depth [m]')
-    ax[4].set_ylabel('y [m]')
-    ax[4].set_xlabel('x [m]')
-    ax[4].set_xlim([emprise[0], emprise[1]])
-    ax[4].set_ylim([emprise[2], emprise[3]])
-    ax[5].axis('equal')
-    ax[5].set_title('diff depth - ground truth depth [m]')
-    ax[5].set_ylabel('y [m]')
-    ax[5].set_xlabel('x [m]')
-    ax[5].set_xlim([emprise[0], emprise[1]])
-    ax[5].set_ylim([emprise[2], emprise[3]])
+    ax[0].set_title('depth gathered [m]')
+    ax[0].axis('equal')
+    ax[0].set_title('depth gathered [m]')
+    ax[0].set_ylabel('y [m]')
+    ax[0].set_xlabel('x [m]')
+    ax[0].set_xlim([emprise[0], emprise[1]])
+    ax[0].set_ylim([emprise[2], emprise[3]])
+    ax[1].axis('equal')
+    ax[1].set_title('ground truth depth [m]')
+    ax[1].set_ylabel('y [m]')
+    ax[1].set_xlabel('x [m]')
+    ax[1].set_xlim([emprise[0], emprise[1]])
+    ax[1].set_ylim([emprise[2], emprise[3]])
+    ax[2].axis('equal')
+    ax[2].set_title('diff depth - ground truth depth [m]')
+    ax[2].set_ylabel('y [m]')
+    ax[2].set_xlabel('x [m]')
+    ax[2].set_xlim([emprise[0], emprise[1]])
+    ax[2].set_ylim([emprise[2], emprise[3]])
     fig.savefig(Path(output_dir_plot).joinpath(basename + f'_gathered_k_{k}' + '.jpg'))
     plt.close('all')
 
@@ -175,11 +165,14 @@ def plot_gathered_results(X, Y, results_Dk_gathered, lidar_data, results_Dk_comm
     diff_depth_ground_truth = results_Dk_gathered - lidar_data
     # make sure to order cam_names so as to have central camera plotted first
     cam_names = list(results_Dk_common_grid.keys())
+    print(cam_names)
     i_central = np.where(np.array(cam_names) == cam_name_central)[0][0]
-    cam_names.pop(i_central)
-    cam_names.insert(0, cam_name_central)
+    # cam_names.pop(i_central)
+    # cam_names.insert(0, cam_name_central)
     alphas = np.ones(len(cam_names)) * 0.5
     alphas[i_central] = 1.0
+    print(cam_names)
+    print(alphas)
 
     for i, cam_name in enumerate(cam_names):
         im0 = ax[0, 0].pcolor(X, Y, results_Dk_common_grid[cam_name], cmap='jet_r', vmin=depth_lims[0],
@@ -229,20 +222,24 @@ k = -1
 # k = 16 + 1 # kth calculated bathy, that has to be plotted
 
 # configuration corresponding to given results
+date = '20220314'
+hour = '08h'
 fieldsite = 'wavecams_palavas_cristal'
-cam_names = ['cristal_1', 'cristal_2', 'cristal_3']
+# cam_names = ['cristal_1', 'cristal_2', 'cristal_3']
+cam_names = ['cristal_1']
 cam_name_central = 'cristal_1'
 # fieldsite = 'wavecams_palavas_stpierre'
+# cam_name_central = 'st_pierre_3'
 # cam_names = ['st_pierre_1', 'st_pierre_2', 'st_pierre_3']
 
-cpu_speed = 'normal' #'fast','normal','slow', 'accurate', 'exact'
+cpu_speed = 'accurate' #'fast','normal','slow', 'accurate', 'exact'
 print(f'cpu_speed: {cpu_speed}')
 calcdmd = 'standard' # standard or robust
 
 # load results
 results = {}
 for cam_name in cam_names:
-    output_dir = f'/home/florent/dev/COCOS/results/{fieldsite}/{cam_name}/'
+    output_dir = f'/home/florent/dev/COCOS/results/{fieldsite}/{cam_name}/{date}/{hour}/'
     f_results = glob(output_dir + f'/results_CPU_speed_{cpu_speed}_calcdmd_{calcdmd}_exec_time_*.npz')[0]
     results[cam_name] = np.load(f_results)
 basename = Path(f_results).stem
@@ -272,6 +269,11 @@ if fieldsite == 'wavecams_palavas_cristal':
     xmax = 576410
     ymin = 4819600
     ymax = 4820200
+if fieldsite == 'wavecams_palavas_stpierre':
+    xmin = 574300
+    xmax = 575120
+    ymin = 4818900
+    ymax = 4819600
 emprise_plot = [xmin, xmax, ymin, ymax]
 
 depth_lims = [0, 6]
@@ -280,3 +282,5 @@ output_dir_plot = f'/home/florent/dev/COCOS/results/{fieldsite}/gathered/'
 Path(output_dir_plot).mkdir(parents=True, exist_ok=True)
 plot_gathered_results(X, Y, results_Dk_common_grid_gathered, z_lidar, results_Dk_common_grid, depth_lims, diff_depth_lims,
                       output_dir_plot, emprise_plot, k, cam_name_central)
+# plot_gathered_results_save(X, Y, results_Dk_common_grid_gathered, z_lidar, results, cam_names, depth_lims, diff_depth_lims,
+#                           output_dir_plot, emprise_plot, k)
