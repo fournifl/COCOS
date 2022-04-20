@@ -4,6 +4,8 @@ Created on Thu Sep  3 13:49:26 2020
 
 @author: gawehn
 """
+import pdb
+
 import matplotlib.pyplot as plt
 import numpy      as np
 import mat73
@@ -50,7 +52,7 @@ class Data():
         start = time.time()
         if label == 'wavecams_palavas_cristal':
             if step is None: step = 1 #set default step
-            frames_wavecams = np.load('/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/Video_compressed_palavas_{cam_name}_res_1.0.npz'.format(cam_name=cam_name))
+            frames_wavecams = np.load('/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/20220314/08h/Video_compressed_palavas_{cam_name}_res_1.0.npz'.format(cam_name=cam_name))
             X           = frames_wavecams['X']
             Y           = frames_wavecams['Y']
             ImgSequence = frames_wavecams['RectMov_gray']
@@ -61,7 +63,7 @@ class Data():
             err_lims    = [0, 1]
         if label == 'wavecams_palavas_cristal_merged':
             if step is None: step = 1 #set default step
-            frames_wavecams = np.load('/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/Video_compressed_palavas_{cam_name}_res_1.0.npz'.format(cam_name=cam_name))
+            frames_wavecams = np.load('/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/20220314/08hVideo_compressed_palavas_{cam_name}_res_1.0.npz'.format(cam_name=cam_name))
             X           = frames_wavecams['X']
             Y           = frames_wavecams['Y']
             ImgSequence = frames_wavecams['RectMov_gray']
@@ -187,7 +189,7 @@ class Data():
             Z_groundTruth = interpolate.griddata((np.ravel(litto3d['Xi']), np.ravel(litto3d['Yi'])), np.ravel(litto3d['zi']),
                                                  (grid.X, grid.Y), method='linear')
             D_groundTruth = -1*Z_groundTruth+WL
-        if Video.label == 'wavecams_palavas_stpierre':
+        elif Video.label == 'wavecams_palavas_stpierre':
             f_litto3d = '/home/florent/Projects/Palavas-les-flots/Bathy/litto3d/st_pierre/litto3d_Palavas_st_pierre_epsg_32631_774_775_6270.pk'
             WL = 0.60 - 0.307
             litto3d = pickle.load(open(f_litto3d, 'rb'))
