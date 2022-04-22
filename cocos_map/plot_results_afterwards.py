@@ -22,7 +22,6 @@ def plot_bathy(results, output_dir_plot, basename, depth_lims, diff_depth_lims, 
             mask = np.isnan(results['Dk'][k])
             diff_depth_ground_truth = results['Dk'][k] - results['Dgt']
             im1 = ax[0].pcolor(results['grid_X'], results['grid_Y'], results['Dk'][k], cmap='jet_r')
-            pdb.set_trace()
             im2 = ax[1].pcolor(results['grid_X'], results['grid_Y'], np.ma.array(results['Dgt'], mask=mask), cmap='jet_r')
             im3 = ax[2].pcolor(results['grid_X'], results['grid_Y'], diff_depth_ground_truth, cmap='Spectral')
 
@@ -213,24 +212,28 @@ def plot_all_diags(results, output_dir_plot, basename, depth_lims, diff_depth_li
 # execution options
 plot_only_bathy = True
 plot_all_results = False
-date = '20220314'
-hour = '08h'
+date = '20220323'
+hour = '15h'
 
 # configuration corresponding to given results
-fieldsite = 'wavecams_palavas_cristal'
-cam_name = 'cristal_3'
+# fieldsite = 'wavecams_palavas_cristal'
+# cam_name = 'cristal_3'
 # fieldsite = 'wavecams_palavas_cristal_merged'
-# fieldsite = 'wavecams_palavas_stpierre'
-# cam_name = 'st_pierre_3'
+fieldsite = 'wavecams_palavas_stpierre'
+cam_name = 'st_pierre_3'
 # fieldsite = 'wavecams_palavas_cristal_merged'
 # cam_name = 'cristal_merged'
-cpu_speeds = ['slow', 'accurate'] #'fast','normal','slow', 'accurate', 'exact'
+cpu_speeds = ['fast', 'normal', 'slow', 'accurate'] #'fast','normal','slow', 'accurate', 'exact'
 calcdmd = 'standard' # standard or robust
 
 for cpu_speed in cpu_speeds:
     # load results
     output_dir = f'/home/florent/dev/COCOS/results/{fieldsite}/{cam_name}/{date}/{hour}/'
-    f_results = glob(output_dir + f'/results_CPU_speed_{cpu_speed}_calcdmd_{calcdmd}_exec_time_*.npz')[0]
+    try:
+        f_results = glob(output_dir + f'/results_CPU_speed_{cpu_speed}_calcdmd_{calcdmd}_exec_time_*.npz')[0]
+    except IndexError:
+        continue
+
     results = np.load(f_results)
     basename = Path(f_results).stem
 
