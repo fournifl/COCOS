@@ -67,12 +67,14 @@ def plot_bathy(results, output_dir_plot, basename, depth_lims, diff_depth_lims, 
 
 
 def compute_gathered_grid(results):
+    resolutions = {}
     for i, cam_name in enumerate(results.keys()):
         xmin_tmp = np.min(results[cam_name]['grid_X'])
         xmax_tmp = np.max(results[cam_name]['grid_X'])
         ymin_tmp = np.min(results[cam_name]['grid_Y'])
         ymax_tmp = np.max(results[cam_name]['grid_Y'])
         resolution_tmp = results[cam_name]['grid_X'][0, 1] - results[cam_name]['grid_X'][0, 0]
+        resolutions[cam_name] = resolution_tmp
         print(f'cam_name: {cam_name}')
         print(f'resolution: {resolution_tmp}')
 
@@ -91,12 +93,13 @@ def compute_gathered_grid(results):
                  ymin = ymin_tmp
             if ymax < ymax_tmp:
                 ymax = ymax_tmp
+            # keep coarser resolution
             if resolution < resolution_tmp:
                 resolution = resolution_tmp
-        x = np.arange(xmin, xmax, resolution)
-        y = np.arange(ymin, ymax, resolution)
-        X, Y = np.meshgrid(x, y)
-    return X, Y
+    x = np.arange(xmin, xmax, resolution)
+    y = np.arange(ymin, ymax, resolution)
+    X, Y = np.meshgrid(x, y)
+    return X, Y, resolution, resolutions
 
 
 def interpolate_results_on_same_grid(results, X, Y, k):
@@ -159,8 +162,9 @@ def plot_gathered_results_save(X, Y, results_Dk_gathered, lidar_data, results, c
     plt.close('all')
 
 
-def plot_gathered_results(X, Y, results_Dk_gathered, lidar_data, results_Dk_common_grid, depth_lims, diff_depth_lims,
-                          output_dir_plot, emprise, k, cam_name_central):
+def plot_gathered_results(cpu_speed, X, Y, results_Dk_gathered, lidar_data, results_Dk_common_grid, depth_lims,
+                          diff_depth_lims, output_dir_plot, emprise, k, cam_name_central, vertical_ref, WL_ref_IGN69,
+                          resolutions, resolution):
     fig, ax = plt.subplots(2, 2, figsize=(22, 8), frameon=False)
     diff_depth_ground_truth = results_Dk_gathered - lidar_data
     # make sure to order cam_names so as to have central camera plotted first
@@ -174,10 +178,23 @@ def plot_gathered_results(X, Y, results_Dk_gathered, lidar_data, results_Dk_comm
     print(cam_names)
     print(alphas)
 
+    # plot bathy from central cam first
+    # vertical_shift
+    if vertical_ref == 'WL':
+        vertical_shift_Dk = 0.0
+    elif vertical_ref == 'IGN69':
+        vertical_shift_Dk = - WL_ref_IGN69
+    im0 = ax[0, 0].pcolor(X, Y, results_Dk_common_grid[cam_name_central] + vertical_shift_Dk, cmap='jet_r',
+                          vmin=depth_lims[0], vmax=depth_lims[1], alpha=alphas[i_central])
     for i, cam_name in enumerate(cam_names):
-        im0 = ax[0, 0].pcolor(X, Y, results_Dk_common_grid[cam_name], cmap='jet_r', vmin=depth_lims[0],
-                              vmax=depth_lims[1], alpha=alphas[i])
-    im1 = ax[1, 0].pcolor(X, Y, results_Dk_gathered, cmap='jet_r', vmin=depth_lims[0], vmax=depth_lims[1])
+        # text resolution of each camera
+        ax[0, 0].text(np.max(X) - 100, np.max(Y) - 100 - i * 30, f'resolution {cam_name}: {resolutions[cam_name]} m')
+        if cam_name != cam_name_central:
+            # plot bathy from each camera
+            im0 = ax[0, 0].pcolor(X, Y, results_Dk_common_grid[cam_name]  + vertical_shift_Dk, cmap='jet_r',
+                                  vmin=depth_lims[0], vmax=depth_lims[1], alpha=alphas[i])
+    im1 = ax[1, 0].pcolor(X, Y, results_Dk_gathered +  + vertical_shift_Dk, cmap='jet_r', vmin=depth_lims[0],
+                          vmax=depth_lims[1])
     im2 = ax[1, 1].pcolor(X, Y, lidar_data, cmap='jet_r', vmin=depth_lims[0], vmax=depth_lims[1])
     im3 = ax[0, 1].pcolor(X, Y, diff_depth_ground_truth, cmap='Spectral', vmin=diff_depth_lims[0], vmax=diff_depth_lims[1])
     contours = ax[0, 1].contour(X, Y, diff_depth_ground_truth, levels=[-1.5, -0.5, 0.5, 1.5], colors=('k',),
@@ -213,8 +230,7 @@ def plot_gathered_results(X, Y, results_Dk_gathered, lidar_data, results_Dk_comm
     ax[0, 0].set_xlabel('x [m]')
     ax[0, 0].set_xlim([emprise[0], emprise[1]])
     ax[0, 0].set_ylim([emprise[2], emprise[3]])
-
-    fig.savefig(Path(output_dir_plot).joinpath(basename + f'_gathered_k_{k}' + '.jpg'))
+    fig.savefig(Path(output_dir_plot).joinpath(f'results_gathered_k_{k}_cpu_speed_{cpu_speed}_vertical_ref_{vertical_ref}_res_{resolution}' + '.jpg'))
     plt.close('all')
 
 # execution option
@@ -222,65 +238,83 @@ k = -1
 # k = 16 + 1 # kth calculated bathy, that has to be plotted
 
 # configuration corresponding to given results
-date = '20220314'
-hour = '08h'
+# date = '20220314'
+# hour = '08h'
+date = '20220323'
+hour = '15h'
+vertical_ref = 'IGN69'#'WL' or 'IGN69'
+
 fieldsite = 'wavecams_palavas_cristal'
-# cam_names = ['cristal_1', 'cristal_2', 'cristal_3']
-cam_names = ['cristal_1']
+cam_names = ['cristal_1', 'cristal_2', 'cristal_3']
+# cam_names = ['cristal_1', 'cristal_2']
 cam_name_central = 'cristal_1'
 # fieldsite = 'wavecams_palavas_stpierre'
 # cam_name_central = 'st_pierre_3'
 # cam_names = ['st_pierre_1', 'st_pierre_2', 'st_pierre_3']
 
-cpu_speed = 'accurate' #'fast','normal','slow', 'accurate', 'exact'
-print(f'cpu_speed: {cpu_speed}')
-calcdmd = 'standard' # standard or robust
+cpu_speeds = ['fast', 'normal', 'slow', 'accurate', 'exact'] #'fast','normal','slow', 'accurate', 'exact'
+for cpu_speed in cpu_speeds:
+    print(f'cpu_speed: {cpu_speed}')
+    calcdmd = 'standard' # standard or robust
 
-# load results
-results = {}
-for cam_name in cam_names:
-    output_dir = f'/home/florent/dev/COCOS/results/{fieldsite}/{cam_name}/{date}/{hour}/'
-    f_results = glob(output_dir + f'/results_CPU_speed_{cpu_speed}_calcdmd_{calcdmd}_exec_time_*.npz')[0]
-    results[cam_name] = np.load(f_results)
-basename = Path(f_results).stem
+    # load results
+    results = {}
+    for cam_name in cam_names:
+        output_dir = f'/home/florent/dev/COCOS/results/{fieldsite}/{cam_name}/{date}/{hour}/'
+        try:
+            f_results = glob(output_dir + f'/results_CPU_speed_{cpu_speed}_calcdmd_{calcdmd}_exec_time_*.npz')[0]
+            results[cam_name] = np.load(f_results)
+            results_exist = True
+        except IndexError:
+            results_exist = False
+            continue
+    if not results_exist:
+        print(f'no result for cpu_speed {cpu_speed}')
+        continue
+    basename = Path(f_results).stem
 
-# merge results
-X, Y = compute_gathered_grid(results)
-results_Dk_common_grid_gathered, results_Dk_common_grid = interpolate_results_on_same_grid(results, X, Y, k)
+    # merge results
+    X, Y, resolution, resolutions = compute_gathered_grid(results)
+    results_Dk_common_grid_gathered, results_Dk_common_grid = interpolate_results_on_same_grid(results, X, Y, k)
 
-# check if ground truth exists:
-ground_truth_exists = type(results[cam_names[-1]]['Dgt']).__module__ == np.__name__
+    # check if ground truth exists:
+    ground_truth_exists = type(results[cam_names[-1]]['Dgt']).__module__ == np.__name__
 
-# interpolate lidar data on gathered grid
-WL = 0.60 - 0.307
-mask = np.isnan(results_Dk_common_grid_gathered)
-if  fieldsite == 'wavecams_palavas_cristal':
-    f_litto3d = '/home/florent/Projects/Palavas-les-flots/Bathy/litto3d/cristal/litto3d_Palavas_epsg_32631_775_776_6271.pk'
-elif fieldsite == 'wavecams_palavas_stpierre':
-    f_litto3d = '/home/florent/Projects/Palavas-les-flots/Bathy/litto3d/st_pierre/litto3d_Palavas_st_pierre_epsg_32631_774_775_6270.pk'
-litto3d = pickle.load(open(f_litto3d, 'rb'))
-if ground_truth_exists:
-    z_lidar = interpolate_lidar_data_on_gathered_grid(litto3d, X, Y, mask)
-z_lidar = - z_lidar + WL
+    # interpolate lidar data on gathered grid
+    mask = np.isnan(results_Dk_common_grid_gathered)
+    if  fieldsite == 'wavecams_palavas_cristal':
+        f_litto3d = '/home/florent/Projects/Palavas-les-flots/Bathy/litto3d/cristal/litto3d_Palavas_epsg_32631_775_776_6271.pk'
+    elif fieldsite == 'wavecams_palavas_stpierre':
+        f_litto3d = '/home/florent/Projects/Palavas-les-flots/Bathy/litto3d/st_pierre/litto3d_Palavas_st_pierre_epsg_32631_774_775_6270.pk'
+    litto3d = pickle.load(open(f_litto3d, 'rb'))
+    if ground_truth_exists:
+        z_lidar = interpolate_lidar_data_on_gathered_grid(litto3d, X, Y, mask)
+    # convert lidar topo to depth and change vertical ref if necessary
+    if date == '20220314':
+        WL_ref_IGN69 = 0.60 - 0.307
+    elif date == '20220323':
+        WL_ref_IGN69 = 0.19 - 0.307
+    if vertical_ref == 'WL':
+        z_lidar = - z_lidar + WL_ref_IGN69
+    elif vertical_ref == 'IGN69':
+        z_lidar = - z_lidar
 
-# affichage
-if fieldsite == 'wavecams_palavas_cristal':
-    xmin = 575680
-    xmax = 576410
-    ymin = 4819600
-    ymax = 4820200
-if fieldsite == 'wavecams_palavas_stpierre':
-    xmin = 574300
-    xmax = 575120
-    ymin = 4818900
-    ymax = 4819600
-emprise_plot = [xmin, xmax, ymin, ymax]
+    # affichage
+    if fieldsite == 'wavecams_palavas_cristal':
+        xmin = 575680
+        xmax = 576410
+        ymin = 4819600
+        ymax = 4820200
+    if fieldsite == 'wavecams_palavas_stpierre':
+        xmin = 574300
+        xmax = 575120
+        ymin = 4818900
+        ymax = 4819600
+    emprise_plot = [xmin, xmax, ymin, ymax]
 
-depth_lims = [0, 6]
-diff_depth_lims = [-1.5, 1.5]
-output_dir_plot = f'/home/florent/dev/COCOS/results/{fieldsite}/gathered/'
-Path(output_dir_plot).mkdir(parents=True, exist_ok=True)
-plot_gathered_results(X, Y, results_Dk_common_grid_gathered, z_lidar, results_Dk_common_grid, depth_lims, diff_depth_lims,
-                      output_dir_plot, emprise_plot, k, cam_name_central)
-# plot_gathered_results_save(X, Y, results_Dk_common_grid_gathered, z_lidar, results, cam_names, depth_lims, diff_depth_lims,
-#                           output_dir_plot, emprise_plot, k)
+    depth_lims = [0, 6]
+    diff_depth_lims = [-1.5, 1.5]
+    output_dir_plot = f'/home/florent/dev/COCOS/results/{fieldsite}/gathered/{date}/{hour}/'
+    Path(output_dir_plot).mkdir(parents=True, exist_ok=True)
+    plot_gathered_results(cpu_speed, X, Y, results_Dk_common_grid_gathered, z_lidar, results_Dk_common_grid, depth_lims, diff_depth_lims,
+                          output_dir_plot, emprise_plot, k, cam_name_central, vertical_ref, WL_ref_IGN69, resolutions, resolution)
