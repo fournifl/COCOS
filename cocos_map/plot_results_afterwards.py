@@ -14,15 +14,30 @@ import pdb
 import collections
 
 
-def plot_bathy(results, output_dir_plot, basename, depth_lims, diff_depth_lims, emprise, ground_truth_exists=None):
+def get_grid_resolution(results):
+    resolution = results['grid_X'][0, 1] - results['grid_X'][0, 0]
+    print(f'resolution: {resolution} m')
+    return resolution
+
+
+def plot_bathy(results, output_dir_plot, depth_lims, diff_depth_lims, emprise, vertical_ref,
+                   resolution, ground_truth_comparison=None):
     n_iter = results['t_iter'].size
+
+    # vertical_shift
+    if vertical_ref == 'WL':
+        vertical_shift_Dk = 0.0
+    elif vertical_ref == 'IGN69':
+        vertical_shift_Dk = - WL_ref_IGN69
+
     for k in range(n_iter):
-        if ground_truth_exists:
+        if ground_truth_comparison:
             fig, ax = plt.subplots(1, 3, figsize=(22, 5))
             mask = np.isnan(results['Dk'][k])
             diff_depth_ground_truth = results['Dk'][k] - results['Dgt']
-            im1 = ax[0].pcolor(results['grid_X'], results['grid_Y'], results['Dk'][k], cmap='jet_r')
-            im2 = ax[1].pcolor(results['grid_X'], results['grid_Y'], np.ma.array(results['Dgt'], mask=mask), cmap='jet_r')
+            im1 = ax[0].pcolor(results['grid_X'], results['grid_Y'], results['Dk'][k] + vertical_shift_Dk, cmap='jet_r')
+            im2 = ax[1].pcolor(results['grid_X'], results['grid_Y'], np.ma.array(results['Dgt'] + vertical_shift_Dk,
+                                                                                 mask=mask), cmap='jet_r')
             im3 = ax[2].pcolor(results['grid_X'], results['grid_Y'], diff_depth_ground_truth, cmap='Spectral')
 
             contours = ax[2].contour(results['grid_X'], results['grid_Y'], diff_depth_ground_truth,
@@ -34,7 +49,6 @@ def plot_bathy(results, output_dir_plot, basename, depth_lims, diff_depth_lims, 
             im1.set_clim([depth_lims[0], depth_lims[1]])
             im2.set_clim([depth_lims[0], depth_lims[1]])
             im3.set_clim([diff_depth_lims[0], diff_depth_lims[1]])
-
             ax[0].axis('equal')
             ax[0].set_title('depth [m]')
             ax[0].set_ylabel('y [m]')
@@ -53,11 +67,13 @@ def plot_bathy(results, output_dir_plot, basename, depth_lims, diff_depth_lims, 
             ax[2].set_xlabel('x [m]')
             ax[2].set_xlim([emprise[0], emprise[1]])
             ax[2].set_ylim([emprise[2], emprise[3]])
-            fig.savefig(Path(output_dir_plot).joinpath(basename + '_' + '%02d' %k + '.jpg'))
+            # fig.savefig(Path(output_dir_plot).joinpath(basename + '_' + '%02d' %k + '.jpg'))
+            fig.savefig(Path(output_dir_plot).joinpath(f'bathy_result_with_groundtruth_cpu_speed_{cpu_speed}_k_{k}_vertical_ref_'
+                                                       f'{vertical_ref}_res_{resolution}' + '.jpg'))
             plt.close('all')
         else:
             fig, ax = plt.subplots(figsize=(20, 10))
-            im1 = ax.pcolor(results['grid_X'], results['grid_Y'], results['Dk'][k], cmap='jet_r')
+            im1 = ax.pcolor(results['grid_X'], results['grid_Y'], results['Dk'][k] + vertical_shift_Dk, cmap='jet_r')
             im1.set_clim([depth_lims[0], depth_lims[1]])
             fig.colorbar(im1, ax=ax)
             ax.axis('equal')
@@ -66,11 +82,14 @@ def plot_bathy(results, output_dir_plot, basename, depth_lims, diff_depth_lims, 
             ax.set_xlabel('x [m]')
             ax.set_xlim([emprise[0], emprise[1]])
             ax.set_ylim([emprise[2], emprise[3]])
-            fig.savefig(Path(output_dir_plot).joinpath(basename + '_' + '%02d' % k + '.jpg'))
+            # fig.savefig(Path(output_dir_plot).joinpath(basename + '_' + '%02d' % k + '.jpg'))
+            fig.savefig(Path(output_dir_plot).joinpath(f'bathy_result_cpu_speed_{cpu_speed}_k_{k}_vertical_ref_'
+                                                       f'{vertical_ref}_res_{resolution}' + '.jpg'))
             plt.close('all')
 
 
-def plot_all_diags(results, output_dir_plot, basename, depth_lims, diff_depth_lims, kalman_error_lims, freqlims):
+def plot_all_diags(results, output_dir_plot, cpu_speed, depth_lims, diff_depth_lims, kalman_error_lims, freqlims,
+                   vertical_ref, resolution):
     depth_rmse = np.array([])
     depth_debiased_rmse = np.array([])
     depth_bias = np.array([])
@@ -205,7 +224,9 @@ def plot_all_diags(results, output_dir_plot, basename, depth_lims, diff_depth_li
         ax[1, 4].set_ylabel('A [norm. intensity]');
         ax[1, 4].set_xlabel('omega [rad/s]')
 
-        fig.savefig(Path(output_dir_plot).joinpath(basename + '_' + '%02d' % k + '.jpg'))
+        # fig.savefig(Path(output_dir_plot).joinpath(basename + '_' + '%02d' % k + '.jpg'))
+        fig.savefig(Path(output_dir_plot).joinpath(f'bathy_result_k_{k}_cpu_speed_{cpu_speed}_vertical_ref_'
+                                                   f'{vertical_ref}_res_{resolution}' + '.jpg'))
         plt.close('all')
 
 
@@ -214,89 +235,101 @@ plot_only_bathy = True
 plot_all_results = False
 date = '20220323'
 hour = '15h'
+vertical_ref = 'IGN69'#'WL' or 'IGN69'
 
 # configuration corresponding to given results
 # fieldsite = 'wavecams_palavas_cristal'
-# cam_name = 'cristal_3'
-# fieldsite = 'wavecams_palavas_cristal_merged'
+# cam_names = ['cristal_1', 'cristal_2', 'cristal_3']
+
 fieldsite = 'wavecams_palavas_stpierre'
-cam_name = 'st_pierre_3'
-# fieldsite = 'wavecams_palavas_cristal_merged'
-# cam_name = 'cristal_merged'
-cpu_speeds = ['fast', 'normal', 'slow', 'accurate'] #'fast','normal','slow', 'accurate', 'exact'
-calcdmd = 'standard' # standard or robust
+cam_names = ['st_pierre_1', 'st_pierre_2', 'st_pierre_3']
+for cam_name in cam_names:
+    print(cam_name)
+    # fieldsite = 'wavecams_palavas_cristal_merged'
+    cpu_speeds = ['fast', 'normal', 'slow', 'accurate'] #'fast','normal','slow', 'accurate', 'exact'
+    calcdmd = 'standard' # standard or robust
 
-for cpu_speed in cpu_speeds:
-    # load results
-    output_dir = f'/home/florent/dev/COCOS/results/{fieldsite}/{cam_name}/{date}/{hour}/'
-    try:
-        f_results = glob(output_dir + f'/results_CPU_speed_{cpu_speed}_calcdmd_{calcdmd}_exec_time_*.npz')[0]
-    except IndexError:
-        continue
+    # define WL_ref_IGN69
+    if date == '20220314':
+        WL_ref_IGN69 = 0.60 - 0.307
+    elif date == '20220323':
+        WL_ref_IGN69 = 0.19 - 0.307
 
-    results = np.load(f_results)
-    basename = Path(f_results).stem
+    for cpu_speed in cpu_speeds:
+        # load results
+        output_dir = f'/home/florent/dev/COCOS/results/{fieldsite}/{cam_name}/{date}/{hour}/'
+        try:
+            f_results = glob(output_dir + f'/results_CPU_speed_{cpu_speed}_calcdmd_{calcdmd}_exec_time_*.npz')[0]
+        except IndexError:
+            continue
 
-    # plot options
-    print(f'xmin = {int(results["grid_X"].min())}')
-    print(f'xmax = {int(results["grid_X"].max())}')
-    print(f'ymin = {int(results["grid_Y"].min())}')
-    print(f'ymax = {int(results["grid_Y"].max())}')
-    if cam_name == 'cristal_1':
-        xmin = 575800
-        xmax = 576140
-        ymin = 4819730
-        ymax = 4820080
-    if cam_name == 'cristal_2':
-        xmin = 575600
-        xmax = 576100
-        ymin = 4819600
-        ymax = 4820100
-    if cam_name == 'cristal_3':
-        xmin = 575910
-        xmax = 576430
-        ymin = 4819750
-        ymax = 4820200
+        results = np.load(f_results)
+        basename = Path(f_results).stem
 
-    elif cam_name == 'st_pierre_2':
-        xmin = 574300
-        xmax = 574700
-        ymin = 4818950
-        ymax = 4819370
-    elif cam_name == 'st_pierre_1':
-        xmin = 574650
-        xmax = 575112
-        ymin = 4819178
-        ymax = 4819514
-    elif cam_name == 'st_pierre_3':
-        xmin = 574500
-        xmax = 574925
-        ymin = 4819088
-        ymax = 4819383
-    elif cam_name == 'cristal_merged':
-        xmin = -488
-        xmax = 487
-        ymin = 12
-        ymax = 487
-    emprise_plot = [xmin, xmax, ymin, ymax]
+        # plot options
+        # print(f'xmin = {int(results["grid_X"].min())}')
+        # print(f'xmax = {int(results["grid_X"].max())}')
+        # print(f'ymin = {int(results["grid_Y"].min())}')
+        # print(f'ymax = {int(results["grid_Y"].max())}')
+        if cam_name == 'cristal_1':
+            xmin = 575800
+            xmax = 576140
+            ymin = 4819730
+            ymax = 4820080
+        if cam_name == 'cristal_2':
+            xmin = 575600
+            xmax = 576100
+            ymin = 4819600
+            ymax = 4820100
+        if cam_name == 'cristal_3':
+            xmin = 575910
+            xmax = 576430
+            ymin = 4819750
+            ymax = 4820200
+        elif cam_name == 'st_pierre_2':
+            xmin = 574300
+            xmax = 574700
+            ymin = 4818950
+            ymax = 4819370
+        elif cam_name == 'st_pierre_1':
+            xmin = 574650
+            xmax = 575112
+            ymin = 4819178
+            ymax = 4819514
+        elif cam_name == 'st_pierre_3':
+            xmin = 574500
+            xmax = 574925
+            ymin = 4819088
+            ymax = 4819383
+        elif cam_name == 'cristal_merged':
+            xmin = -488
+            xmax = 487
+            ymin = 12
+            ymax = 487
+        emprise_plot = [xmin, xmax, ymin, ymax]
 
-    # check if ground truth exists:
-    ground_truth_exists = type(results['Dgt']).__module__ == np.__name__
-    # ground_truth_exists = False
+        # get grid resolution
+        resolution = get_grid_resolution(results)
 
-    # affichage
-    depth_lims = [0, 8]
-    diff_depth_lims = [-1.5, 1.5]
+        # check if ground truth exists:
+        # ground_truth_exists = type(results['Dgt']).__module__ == np.__name__
+        ground_truth_comparison = False
 
-    if plot_only_bathy:
-        dir_plot = 'plots_only_bathy'
-        output_dir_plot = f'{output_dir}/{dir_plot}/'
-        Path(output_dir_plot).mkdir(parents=True, exist_ok=True)
-        plot_bathy(results, output_dir_plot, basename, depth_lims, diff_depth_lims, emprise_plot, ground_truth_exists=ground_truth_exists)
-    if plot_all_results * ground_truth_exists:
-        kalman_error_lims = [0, 1]
-        freqlims = [1 / 3, 1 / 15]
-        dir_plot = 'plots_all_results'
-        output_dir_plot = f'/home/florent/dev/COCOS/results/{fieldsite}/{cam_name}/{dir_plot}/'
-        Path(output_dir_plot).mkdir(parents=True, exist_ok=True)
-        plot_all_diags(results, output_dir_plot, basename, depth_lims, diff_depth_lims, kalman_error_lims, freqlims)
+        # affichage
+        depth_lims = [0, 8]
+        diff_depth_lims = [-1.5, 1.5]
+
+        if plot_only_bathy:
+            dir_plot = 'plots_only_bathy'
+            output_dir_plot = f'{output_dir}/{dir_plot}/'
+            Path(output_dir_plot).mkdir(parents=True, exist_ok=True)
+            plot_bathy(results, output_dir_plot, depth_lims, diff_depth_lims, emprise_plot, vertical_ref,
+                       resolution, ground_truth_comparison=ground_truth_comparison)
+        if plot_all_results * ground_truth_comparison:
+            kalman_error_lims = [0, 1]
+            freqlims = [1 / 3, 1 / 15]
+            dir_plot = 'plots_all_results'
+            output_dir_plot = f'/home/florent/dev/COCOS/results/{fieldsite}/{cam_name}/{dir_plot}/'
+            Path(output_dir_plot).mkdir(parents=True, exist_ok=True)
+            plot_all_diags(results, output_dir_plot, cpu_speed, depth_lims, diff_depth_lims, kalman_error_lims, freqlims,
+                           vertical_ref, resolution)
