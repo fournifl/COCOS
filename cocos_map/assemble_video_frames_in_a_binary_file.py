@@ -17,11 +17,9 @@ from pathlib import Path
 # sitename
 cam_name = 'cristal_2'
 sitename = f'palavas_{cam_name}'
-# sitename = 'palavas_stpierre_3'
 
 # data_dir
 data_dir = Path(f'/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/')
-# data_dir = Path('/home/florent/dev/COCOS/data/raw/palavas/st_pierre_3/')
 
 # input projected frames
 # dir_frames = '/home/florent/dev/COCOS/data/raw/palavas/cristal_1/frames_projected/'
