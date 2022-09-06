@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import griddata
 from matplotlib import cm
 from matplotlib.colors import Normalize
+from copy import copy
 from pathlib import Path
 from glob import glob
 import numpy as np
@@ -102,9 +103,10 @@ def compute_gathered_grid(results):
     return X, Y, resolution, resolutions
 
 
-def interpolate_results_on_same_grid(results, X, Y, k):
+def interpolate_results_on_same_grid(results, X, Y, k, cam_names_ordered):
     results_Dk_common_grid = {}
-    for i, cam_name in enumerate(results.keys()):
+    # add central cam data on gathered grid last, as pixel footprint is better compared to lateral cameras
+    for i, cam_name in enumerate(cam_names_ordered):
         points = (np.vstack([results[cam_name]['grid_X'].flatten(), results[cam_name]['grid_Y'].flatten()])).T
         values = results[cam_name]['Dk'][k, :, :].flatten()
         Z = griddata(points, values, (X, Y))
@@ -329,7 +331,11 @@ for cpu_speed in cpu_speeds:
 
     # merge results
     X, Y, resolution, resolutions = compute_gathered_grid(results)
-    results_Dk_common_grid_gathered, results_Dk_common_grid = interpolate_results_on_same_grid(results, X, Y, k)
+    # cam_names_ordered so as to have cam_central in last position
+    cam_names_ordered = copy(cam_names)
+    cam_names_ordered.append(cam_names_ordered.pop(cam_names_ordered.index(cam_name_central)))
+    # merging
+    results_Dk_common_grid_gathered, results_Dk_common_grid = interpolate_results_on_same_grid(results, X, Y, k, cam_names_ordered)
 
     # check if ground truth exists:
     ground_truth_exists = False
