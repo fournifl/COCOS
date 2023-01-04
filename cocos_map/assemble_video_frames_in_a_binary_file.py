@@ -15,20 +15,23 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 # sitename
-cam_name = 'cristal_2'
-sitename = f'palavas_{cam_name}'
+# site = 'palavas'
+# cam_name = 'cristal_2'
+site = 'chicama'
+cam_name = 'cam'
+
+sitename = f'{site}_{cam_name}'
 
 # data_dir
-data_dir = Path(f'/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/')
+data_dir = Path(f'/home/florent/dev/COCOS/data/raw/{site}/{cam_name}/')
 
 # input projected frames
-# dir_frames = '/home/florent/dev/COCOS/data/raw/palavas/cristal_1/frames_projected/'
 dir_frames = data_dir.joinpath('frames_projected/')
 
 ls = sorted(dir_frames.rglob("P*.png"))
 
 # number of used frames
-n = 150
+n = 900
 # n = None
 if n is not None:
     ls = ls[0:n]
@@ -51,9 +54,13 @@ dx = round(grid_coords['utmx_projected_grid'][0, 1] - grid_coords['utmx_projecte
 # georef
 georef = json.load(open('/home/florent/ownCloud/Projets/SuiviVideo/Palavas/cameras/CAM18/info/georef/georef.json'))
 # georef = json.load(open('/home/florent/ownCloud/Projets/SuiviVideo/Palavas/cameras/CAM21/info/georef/georef.json'))
+georef = None
 
 # update grid projection coordinates with camera position
-camera_position =  georef['Grid_Coordinate_System_Offset']
+if georef is not None:
+    camera_position = georef['Grid_Coordinate_System_Offset']
+else:
+    camera_position = [0, 0]
 grid_coords['utmx_projected_grid'] = grid_coords['utmx_projected_grid'].astype(float)
 grid_coords['utmy_projected_grid'] = grid_coords['utmy_projected_grid'].astype(float)
 grid_coords['utmx_projected_grid'] += camera_position[0]
