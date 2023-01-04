@@ -29,7 +29,8 @@ class Grid:
             elif opts.CPU_speed == 'accurate':
                 discretization = 80
             elif opts.CPU_speed == 'exact':
-                discretization = 500
+                # discretization = 500
+                discretization = 150
             self.Npx_min    = int(np.max([opts.Npx_fftmin, round(opts.Nm_fftmin/Video.dx) + round(opts.Nm_fftmin/Video.dx) % 2]))
             gc_shift        = round(np.mean([(Video.m - self.Npx_min)/discretization,(Video.n - self.Npx_min)/discretization]))#.astype(int)#number of pixles between cells
         if gc_shift < 2:
