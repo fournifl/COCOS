@@ -61,6 +61,17 @@ class Data():
             d_lims      = [0, 8]
             diff_lims   = [-1.5, 1.5]
             err_lims    = [0, 1]
+        if label == 'chicama':
+            if step is None: step = 1 #set default step
+            frames_wavecams = np.load('/home/florent/dev/COCOS/data/raw/chicama/{cam_name}/Video_compressed_chicama_{cam_name}.npz'.format(cam_name=cam_name))
+            X           = frames_wavecams['X']
+            Y           = frames_wavecams['Y']
+            ImgSequence = frames_wavecams['RectMov_gray']
+            dx          = frames_wavecams['dx']
+            dt          = frames_wavecams['dt']
+            d_lims      = [0, 15]
+            diff_lims   = [-1.5, 1.5]
+            err_lims    = [0, 1]
         if label == 'wavecams_palavas_cristal_merged':
             if step is None: step = 1 #set default step
             frames_wavecams = np.load('/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/20220314/08hVideo_compressed_palavas_{cam_name}_res_1.0.npz'.format(cam_name=cam_name))
