@@ -233,16 +233,24 @@ def plot_all_diags(results, output_dir_plot, cpu_speed, depth_lims, diff_depth_l
 # execution options
 plot_only_bathy = True
 plot_all_results = False
-date = '20220323'
-hour = '15h'
-vertical_ref = 'IGN69'#'WL' or 'IGN69'
+# date = '20220323'
+# hour = '15h'
+date = '20220709'
+hour = '11h'
+# vertical_ref = 'IGN69'#'WL' or 'IGN69'
+vertical_ref = 'WL'#'WL' or 'IGN69'
 
 # configuration corresponding to given results
 # fieldsite = 'wavecams_palavas_cristal'
 # cam_names = ['cristal_1', 'cristal_2', 'cristal_3']
 
-fieldsite = 'wavecams_palavas_stpierre'
-cam_names = ['st_pierre_1', 'st_pierre_2', 'st_pierre_3']
+# fieldsite = 'wavecams_palavas_stpierre'
+# cam_names = ['st_pierre_1', 'st_pierre_2', 'st_pierre_3']
+
+fieldsite = 'chicama'
+cam_names = ['cam_res_0.5m']
+# cam_names = ['cam_res_1.0m']
+
 for cam_name in cam_names:
     print(cam_name)
     # fieldsite = 'wavecams_palavas_cristal_merged'
@@ -306,6 +314,16 @@ for cam_name in cam_names:
             xmax = 487
             ymin = 12
             ymax = 487
+        elif cam_name == 'cam_res_1.0m':
+            xmin = -750
+            xmax = 750
+            ymin = 0
+            ymax = 2000
+        if cam_name == 'cam_res_0.5m':
+            xmin = -150
+            xmax = 150
+            ymin = 0
+            ymax = 500
         emprise_plot = [xmin, xmax, ymin, ymax]
 
         # get grid resolution
