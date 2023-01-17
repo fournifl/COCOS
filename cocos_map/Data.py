@@ -36,9 +36,9 @@ class Data():
 
         return p.contains_points(q).reshape(shape)
 
-    def set_Video(X, Y, ImgSequence, m, n, l, dx, dt, label):
-        VideoStruct     = namedtuple('struct', ['X', 'Y', 'ImgSequence', 'm', 'n', 'l', 'dx', 'dt', 'label'])
-        Video           = VideoStruct(X, Y, ImgSequence, m, n, l, dx, dt, label)
+    def set_Video(X, Y, ls_frames, m, n, n_frames, dx, dt, label):
+        VideoStruct     = namedtuple('struct', ['X', 'Y', 'ls_frames', 'm', 'n', 'n_frames', 'dx', 'dt', 'label'])
+        Video           = VideoStruct(X, Y, ls_frames, m, n, n_frames, dx, dt, label)
         return Video
 
     def set_plot_limits(d_lims,diff_lims,err_lims):
@@ -52,142 +52,47 @@ class Data():
         start = time.time()
         if label == 'wavecams_palavas_cristal':
             if step is None: step = 1 #set default step
-            frames_wavecams = np.load('/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/20220323/15h/Video_compressed_palavas_{cam_name}_res_1.0.npz'.format(cam_name=cam_name))
+            frames_wavecams = pickle.load(open(f'/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/20220314/07h/Video_infos_palavas_{cam_name}_res_1.0.pk', 'rb'))
             X           = frames_wavecams['X']
             Y           = frames_wavecams['Y']
-            ImgSequence = frames_wavecams['RectMov_gray']
+            ls_frames   = frames_wavecams['ls_frames']
+            m           = frames_wavecams['m']
+            n           = frames_wavecams['n']
             dx          = frames_wavecams['dx']
             dt          = frames_wavecams['dt']
+            n_frames    =  frames_wavecams['n_frames']
             d_lims      = [0, 8]
             diff_lims   = [-1.5, 1.5]
             err_lims    = [0, 1]
-        if label == 'chicama':
-            if step is None: step = 1 #set default step
-            frames_wavecams = np.load('/home/florent/dev/COCOS/data/raw/chicama/{cam_name}/Video_compressed_chicama_{cam_name}.npz'.format(cam_name=cam_name))
-            X           = frames_wavecams['X']
-            Y           = frames_wavecams['Y']
-            ImgSequence = frames_wavecams['RectMov_gray']
-            dx          = frames_wavecams['dx']
-            dt          = frames_wavecams['dt']
-            d_lims      = [0, 15]
-            diff_lims   = [-1.5, 1.5]
-            err_lims    = [0, 1]
-        if label == 'wavecams_palavas_cristal_merged':
-            if step is None: step = 1 #set default step
-            frames_wavecams = np.load('/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/20220314/08hVideo_compressed_palavas_{cam_name}_res_1.0.npz'.format(cam_name=cam_name))
-            X           = frames_wavecams['X']
-            Y           = frames_wavecams['Y']
-            ImgSequence = frames_wavecams['RectMov_gray']
-            dx          = frames_wavecams['dx']
-            dt          = frames_wavecams['dt']
-            d_lims      = [0, 8]
-            diff_lims   = [-1.5, 1.5]
-            err_lims    = [0, 1]
+
         if label == 'wavecams_palavas_stpierre':
             if step is None: step = 1 #set default step
-            frames_wavecams = np.load(f'/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/20220323/15h/Video_compressed_palavas_{cam_name}.npz')
+            frames_wavecams = pickle.load(open((f'/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/20220323/15h/Video_infos_palavas_{cam_name}_res_1.0.pk', 'rb')))
             X           = frames_wavecams['X']
             Y           = frames_wavecams['Y']
-            ImgSequence = frames_wavecams['RectMov_gray']
+            ls_frames = frames_wavecams['ls_frames']
+            m = frames_wavecams['m']
+            n = frames_wavecams['n']
             dx          = frames_wavecams['dx']
             dt          = frames_wavecams['dt']
+            n_frames = frames_wavecams['n_frames']
             d_lims      = [0, 16]
             diff_lims   = [-1.5, 1.5]
             err_lims    = [0, 2]
-        if label == 'duck': # define label
-            if step is None: step = 1 #set default step
-            DuckArgus   = loadmat('../data/Video_Duck.mat')
-            X           = DuckArgus['XX']
-            Y           = DuckArgus['YY']
-            ImgSequence = DuckArgus['TimeStack']
-            dx          = DuckArgus['dx'][0][0]
-            dt          = DuckArgus['dt'][0][0]
-            # only for visualization
-            d_lims      = [0,6]
-            diff_lims   = [-1.5,1.5]
-            err_lims    = [0, 2]
-        if label == 'scheveningen':
-            if step is None: step = 1 #set default step
-            SchevDrone  = np.load('../data/Video_Scheveningen.npz')
-            X           = SchevDrone['X']
-            Y           = SchevDrone['Y']
-            ImgSequence = SchevDrone['RectMov_gray']
-            dx          = SchevDrone['dx']
-            dt          = SchevDrone['dt']
-            # only for visualization
-            d_lims      = [0,8]
-            diff_lims   = [-1.5,1.5]
-            err_lims    = [0, 2]
-        if label == 'narrabeen':
-            if step is None: step = 1 #set default step
-            NarraDrone  = np.load('../data/Video_Narrabeen.npz')
-            X           = NarraDrone['X']
-            Y           = NarraDrone['Y']
-            ImgSequence = NarraDrone['RectMov_gray']
-            dx          = NarraDrone['dx']
-            dt          = NarraDrone['dt']
-            mask        = ~cls.inpoly(X,Y,np.array([341000,342400,342700,341000]),np.array([626700,6267200,6270000,6270000]))
-            for ii in range(ImgSequence.shape[2]):
-                ImgSequence[:,:,ii] *= mask
-            # only for visualization
-            d_lims      = [0,16]
-            diff_lims   = [-1.5,1.5]
-            err_lims    = [0, 2]
-        if label == 'porthtowan':
-            if step is None: step = 1 #set default step
-            PortTArgus  = loadmat('../data/Video_Porthtowan.mat')
-            X           = PortTArgus['X'][26:,:181]
-            Y           = PortTArgus['Y'][26:,:181]
-            ImgSequence = PortTArgus['ImgSequence'][26:,:181]
-            dx          = PortTArgus['dx'][0][0]
-            dt          = PortTArgus['dt'][0][0]
-            mask        = ~cls.inpoly(X,Y,np.array([0,300,482,0]),np.array([580,580,-300,-300]))
-            for ii in range(ImgSequence.shape[2]):
-                ImgSequence[:,:,ii] *= mask
-            # only for visualization
-            d_lims      = [0,8]
-            diff_lims   = [-1.5,1.5]
-            err_lims    = [0, 2]
-        if label == 'fig3':
-            if step is None: step = 1 #set default step
-            T   = 600
-            dt  = 0.5
-            m   = 128
-            mult= m/128
-            omegas   = np.array([1.75, 3.10, 1.0, 1.50, 4.2, 5.1])/2 #1.85
-            IC  = np.array([0.5, -0.35, -0.70, -1.0, 0.55, 0.2])*m**2
-            I   = (np.array([5, 6, 3, 5, 9, 12])*mult).astype(int)
-            J   = (np.array([0, 3, 2, 2, 4, 5])*mult).astype(int)
-            n   = int(T/dt)
-            dx  = 1
-            K   = 0 #reflection
-            #factor needed for identical amplitudes between Fouerier spectra of progressive and (partly) standing wave fields
-            elliptic_integral2ndkind = lambda x,K: (1-4*K/(K+1)**2*np.sin(x)**2)**0.5 #integral of amplitude (i.e. sqrt(1+2K*sin(2phi)+K**2)) in eq 10 of Goda & Suzuki 1976 (neglecting the scaling factor |1+K| in integral, which represents the added amplitude/excursion due to reflected component)
-            itg_standWave   = integrate.quad(elliptic_integral2ndkind,a = 0,b = 2*np.pi, args=(K,))
-            itg_progWave    = 1*2*np.pi
-            fac             = itg_progWave/itg_standWave[0]
-            [X,Y] = np.meshgrid(np.linspace(0,m-1,m),np.linspace(0,m-1,m))
-            ImgSequence = np.zeros((m,m,n),dtype = float)
-            for t_ID,t in enumerate(np.linspace(0,T,n)):# loop over time
-                xtilde = np.zeros((m,m),dtype = 'complex128')
-                for k in range(len(omegas)): # loop over waves
-                    #wave incident
-                    xtilde[I[k],J[k]] = np.exp(1j*omegas[k]*t)*(IC[k])*fac/(1+K)
-                    #wave reflected
-                    if J[k] == 0:
-                        xtilde[m-I[k],0-J[k]] = np.exp(1j*omegas[k]*t)*(IC[k]*K)*fac/(1+K)
-                    else:
-                        xtilde[m-I[k],m-J[k]] = np.exp(1j*omegas[k]*t)*(IC[k]*K)*fac/(1+K)
-                x = np.real(np.fft.ifft2(xtilde))
-                ImgSequence[:,:,t_ID] = x
 
         ix_x  = slice(startx,stopx,step)
         ix_y  = slice(starty,stopy,step)
-        m,n,l = ImgSequence[ix_y,ix_x,:].shape
+        # m,n,l = ImgSequence[ix_y,ix_x,:].shape
 
         end = time.time()
         op_print('CPU time: {} s'.format(np.round((end-start)*100)/100))
-        return Data.set_Video(X[ix_y,ix_x], Y[ix_y,ix_x], ImgSequence[ix_y,ix_x,:], m, n, l, dx*step, dt, label), Data.set_plot_limits(d_lims,diff_lims,err_lims)
+        return Data.set_Video(X[ix_y,ix_x],
+                              Y[ix_y,ix_x],
+                              ls_frames,
+                              m, n, n_frames,
+                              dx*step,
+                              dt, label), \
+            Data.set_plot_limits(d_lims,diff_lims,err_lims)
 
     def get_GroundTruth(opts, Video, grid, step = None):
         op_print('   load ground truth data...', end =" ")
