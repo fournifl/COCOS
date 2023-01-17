@@ -76,10 +76,13 @@ output_dict['X'] = grid_coords['utmx_projected_grid']
 output_dict['Y'] = grid_coords['utmy_projected_grid']
 output_dict['dx'] = dx
 output_dict['dt'] = dt
+output_dict['m'] = height
+output_dict['n'] = width
+output_dict['n_frames'] = n
 
 output_dict['ls_frames'] = ls
 
 # save
-pk.dump(output_dict, open(data_dir.joinpath(f'{date}/{hour}/', f'Video_infos_{sitename}_res_{dx}.pk'), 'wb'))
+pk.dump(output_dict, open(data_dir.joinpath(f'{date}/{hour}/', f'Video_infos_{sitename}_res_{dx:.1f}.pk'), 'wb'))
 
 
