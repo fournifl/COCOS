@@ -16,6 +16,8 @@ from mpl_toolkits.mplot3d import axes3d
 #from fbpca import pca as fbsvd
 import matplotlib.pyplot as plt
 from simple_utils import optional_print as op_print
+from simple_utils import assemble_frames_images_into_3d_array
+
 #import dask.array as da
 #from dask.array.linalg import svd_compressed as dasvd
 #from dask.array import from_array
@@ -160,13 +162,16 @@ class DMD():
 
         op_print('build video matrix...')
         startt  = time.time()
-        self.m      = Video.ImgSequence.shape[0]
-        self.n      = Video.ImgSequence.shape[1]
+        # self.m      = Video.ImgSequence.shape[0]
+        # self.n      = Video.ImgSequence.shape[1]
+        self.m = Video.m
+        self.n = Video.n
         self.Npx    = self.m*self.n
         l           = stop-start
 
         # get video fragment
-        self.Xvid = np.reshape(Video.ImgSequence[:,:,start:stop],(self.m*self.n,l), order="F").astype('float32')
+        frames_3d_array, l_video_segment = assemble_frames_images_into_3d_array(Video.ls_frames, start, stop, Video.m, Video.n, Video.n_frames)
+        self.Xvid = np.reshape(frames_3d_array,(self.m*self.n, l_video_segment), order="F").astype('float32')
         # fill pixle timeseries only containing 0s and nans with nans
         set_Xvid_nanzeroColumns2nans(self)
         # detrend
