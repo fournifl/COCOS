@@ -47,12 +47,12 @@ class Data():
         return PlotLims
 
     @classmethod
-    def get_Video(cls,label, cam_name, startx = None, stopx = None, starty = None, stopy = None, step = None):
+    def get_Video(cls, label, cam_name, date, hour,  startx = None, stopx = None, starty = None, stopy = None, step = None):
         op_print('load video data...', end =" ")
         start = time.time()
         if label == 'wavecams_palavas_cristal':
             if step is None: step = 1 #set default step
-            frames_wavecams = pickle.load(open(f'/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/20220314/07h/Video_infos_palavas_{cam_name}_res_1.0.pk', 'rb'))
+            frames_wavecams = pickle.load(open(f'/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/{date}/{hour}/Video_infos_palavas_{cam_name}_res_1.0.pk', 'rb'))
             X           = frames_wavecams['X']
             Y           = frames_wavecams['Y']
             ls_frames   = frames_wavecams['ls_frames']
@@ -67,7 +67,7 @@ class Data():
 
         if label == 'wavecams_palavas_stpierre':
             if step is None: step = 1 #set default step
-            frames_wavecams = pickle.load(open((f'/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/20220323/15h/Video_infos_palavas_{cam_name}_res_1.0.pk', 'rb')))
+            frames_wavecams = pickle.load(open((f'/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/{date}/{hour}/Video_infos_palavas_{cam_name}_res_1.0.pk', 'rb')))
             X           = frames_wavecams['X']
             Y           = frames_wavecams['Y']
             ls_frames = frames_wavecams['ls_frames']
