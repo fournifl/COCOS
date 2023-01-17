@@ -41,12 +41,16 @@ cam_name = 'cristal_2'
 # cam_name = 'cristal_merged'
 # cam_name = 'cam'
 
+# date, hour of video frames
+date = '20220314'
+hour = '07h'
+
 # output directory
-output_dir = f'../results/{fieldsite}/{cam_name}'
+output_dir = f'../results/{fieldsite}/{cam_name}/{date}/{hour}/'
 Path(output_dir).mkdir(parents=True, exist_ok=True)
 
 # load video data
-Video, PlotLims = Data.get_Video(fieldsite, cam_name)
+Video, PlotLims = Data.get_Video(fieldsite, cam_name, date, hour)
 
 
 # set options
