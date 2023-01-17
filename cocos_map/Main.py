@@ -26,17 +26,19 @@ from simple_utils import optional_print as op_print
 t0 = time.time()
 plot_results = False
 save_results = True
-cpu_speeds = ['slow', 'accurate'] #'fast','normal','slow', 'accurate', 'exact'
+cpu_speeds = ['fast', 'normal', 'slow', 'accurate'] #'fast','normal','slow', 'accurate', 'exact'
 calcmdmd = 'standard' # standard or robust
 
 # Fieldsite
-fieldsite = 'wavecams_palavas_cristal'
+# fieldsite = 'wavecams_palavas_cristal'
 # fieldsite = 'wavecams_palavas_cristal_merged'
 # fieldsite = 'wavecams_palavas_stpierre'
+fieldsite = 'chicama'
 # ~ fieldsite = 'narrabeen'
-cam_name = 'cristal_2'
-# cam_name = 'st_pierre_2'
+# cam_name = 'cristal_3'
+# cam_name = 'st_pierre_3'
 # cam_name = 'cristal_merged'
+cam_name = 'cam'
 
 # output directory
 output_dir = f'../results/{fieldsite}/{cam_name}'
@@ -60,7 +62,6 @@ for cpu_speed in cpu_speeds:
         return Inversion.gc_walk(*arg, **kwarg)
     # initialize grid
     grid = Grid(Video, opts)
-    # test = Data.get_GroundTruth(opts, Video, grid, step = None)
     # initialize inversion
     InvObj  = Inversion()
     # initialize spectral storage
@@ -184,7 +185,7 @@ for cpu_speed in cpu_speeds:
         gc_kernel[int(gc_kernel.shape[0] / 2), int(gc_kernel.shape[1] / 2)] = 1
         gc_kernel[gc_kernel == 0] = np.nan
         Cxy_omega   = Results.c_omega
-        Dgt         = Data.get_GroundTruth(opts, Video, grid, step = None)
+        Dgt         = Data.get_GroundTruth(opts, Video, grid, step=None)
         numrows = np.asarray(grid.Numrows)
         numcols = np.asarray(grid.Numcols)
         # save in npz compressed format
