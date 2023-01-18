@@ -52,7 +52,7 @@ class Data():
         start = time.time()
         if label == 'wavecams_palavas_cristal':
             if step is None: step = 1 #set default step
-            frames_wavecams = np.load('/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/20220323/15h/Video_compressed_palavas_{cam_name}_res_1.0.npz'.format(cam_name=cam_name))
+            frames_wavecams = np.load('/home/florent/dev/COCOS/data/raw/palavas/{cam_name}/20220314/07h/Video_compressed_palavas_{cam_name}_res_1.0.npz'.format(cam_name=cam_name))
             X           = frames_wavecams['X']
             Y           = frames_wavecams['Y']
             ImgSequence = frames_wavecams['RectMov_gray']
