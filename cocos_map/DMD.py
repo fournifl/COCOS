@@ -4,6 +4,7 @@ Created on Fri Sep  4 12:24:04 2020
 
 @author: gawehn
 """
+import pdb
 
 import numpy as np
 import time
@@ -170,8 +171,9 @@ class DMD():
         l           = stop-start
 
         # get video fragment
-        frames_3d_array, l_video_segment = assemble_frames_paths_into_3d_array(Video.ls_frames, start, stop, Video.m, Video.n, Video.n_frames)
-        self.Xvid = np.reshape(frames_3d_array,(self.m*self.n, l_video_segment), order="F").astype('float32')
+        frames_3d_array, length_video_segment = assemble_frames_paths_into_3d_array(Video.ls_frames, start, stop, Video.m, Video.n, Video.n_frames)
+        self.Xvid = np.reshape(frames_3d_array, (self.m*self.n, length_video_segment), order="F").astype('float32')
+
         # fill pixle timeseries only containing 0s and nans with nans
         set_Xvid_nanzeroColumns2nans(self)
         # detrend
