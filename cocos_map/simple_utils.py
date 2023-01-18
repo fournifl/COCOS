@@ -1,7 +1,7 @@
 """
 @author: fournifl
 """
-
+import pdb
 
 import numpy as np
 import cv2
@@ -14,14 +14,14 @@ def optional_print(to_print, end='\n'):
 
 def assemble_frames_paths_into_3d_array(ls, start, stop, m, n, n_frames_in_video):
     if stop <= n_frames_in_video -1:
-        l = stop
+        block = stop - start
     else:
-        l = n_frames_in_video - 1
-    frames_array = np.zeros((m, n, l))
+        block = n_frames_in_video - start
+    frames_array = np.zeros((m, n, block))
+
+    ii = 0
     for i in range(start, stop):
         frame = cv2.imread(str(ls[i]), cv2.IMREAD_GRAYSCALE)
-        frames_array[:, :, i] = frame
-    return frames_array, l
-
-
-
+        frames_array[:, :, ii] = frame
+        ii += 1
+    return frames_array, block
