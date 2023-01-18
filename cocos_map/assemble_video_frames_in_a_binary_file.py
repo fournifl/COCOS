@@ -15,24 +15,27 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 # sitename
-# site = 'palavas'
-# cam_name = 'cristal_2'
-site = 'chicama'
-cam_name = 'cam'
-
+site = 'palavas'
+cam_name = 'cristal_2'
+# site = 'chicama'
+# cam_name = 'cam'
 sitename = f'{site}_{cam_name}'
+
+# date, hour of video
+date = '20220314'
+hour = '07h'
 
 # data_dir
 data_dir = Path(f'/home/florent/dev/COCOS/data/raw/{site}/{cam_name}/')
 
 # input projected frames
-dir_frames = data_dir.joinpath('frames_projected/')
+dir_frames = data_dir.joinpath(f'{date}/{hour}/frames_projected/')
 
 ls = sorted(dir_frames.rglob("P*.png"))
 
 # number of used frames
-n = 900
-# n = None
+# n = 900
+n = None
 if n is not None:
     ls = ls[0:n]
 else:
@@ -52,9 +55,9 @@ grid_coords = pickle.load(open(f_coords, 'rb'), encoding='latin-1')
 dx = round(grid_coords['utmx_projected_grid'][0, 1] - grid_coords['utmx_projected_grid'][0, 0], 2)
 
 # georef
-georef = json.load(open('/home/florent/ownCloud/Projets/SuiviVideo/Palavas/cameras/CAM18/info/georef/georef.json'))
+georef = json.load(open('/home/florent/ownCloud/Projets/SuiviVideo/Palavas/cameras/CAM17/info/georef/georef.json'))
 # georef = json.load(open('/home/florent/ownCloud/Projets/SuiviVideo/Palavas/cameras/CAM21/info/georef/georef.json'))
-georef = None
+# georef = None
 
 # update grid projection coordinates with camera position
 if georef is not None:
@@ -77,8 +80,9 @@ output_dict['RectMov_gray'] = np.zeros((height, width, n)) * np.nan
 
 for i, f in enumerate(ls):
     # conversion of frame to gray
-    img = cv2.imread(str(f))
-    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # img = cv2.imread(str(f))
+    # img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img_gray = cv2.imread(str(f), cv2.IMREAD_GRAYSCALE)
     output_dict['RectMov_gray'][:, :, i] = img_gray
 
 # save
