@@ -102,6 +102,7 @@ for cpu_speed in cpu_speeds:
     cnt = 0
     # while frame_start+opts.Nt <= Video.ImgSequence.shape[2]: #(remove <= tt for unlimited analysis)
     while frame_start+opts.Nt <= Video.n_frames:
+        print(f'frame_start: {frame_start}')
         op_print('\n --------------- START Update #{:} ---------------\n'.format(cnt+1))
         t_real_start    = time.time()
         t               = (frame_start + np.round(opts.Nt/2))*Video.dt
