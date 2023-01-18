@@ -26,19 +26,20 @@ from simple_utils import optional_print as op_print
 t0 = time.time()
 plot_results = False
 save_results = True
-cpu_speeds = ['fast', 'normal', 'slow', 'accurate'] #'fast','normal','slow', 'accurate', 'exact'
+# cpu_speeds = ['fast', 'normal', 'slow', 'accurate'] #'fast','normal','slow', 'accurate', 'exact'
+cpu_speeds = ['fast'] #'fast','normal','slow', 'accurate', 'exact'
 calcmdmd = 'standard' # standard or robust
 
 # Fieldsite
-# fieldsite = 'wavecams_palavas_cristal'
+fieldsite = 'wavecams_palavas_cristal'
 # fieldsite = 'wavecams_palavas_cristal_merged'
 # fieldsite = 'wavecams_palavas_stpierre'
-fieldsite = 'chicama'
+# fieldsite = 'chicama'
 # ~ fieldsite = 'narrabeen'
-# cam_name = 'cristal_3'
+cam_name = 'cristal_2'
 # cam_name = 'st_pierre_3'
 # cam_name = 'cristal_merged'
-cam_name = 'cam'
+# cam_name = 'cam'
 
 # output directory
 output_dir = f'../results/{fieldsite}/{cam_name}'
