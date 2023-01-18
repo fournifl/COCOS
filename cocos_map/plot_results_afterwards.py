@@ -231,30 +231,34 @@ def plot_all_diags(results, output_dir_plot, cpu_speed, depth_lims, diff_depth_l
 
 
 # execution options
-plot_only_bathy = True
-plot_all_results = False
+plot_only_bathy = False
+plot_all_results = True
+date = '20220314'
+hour = '07h'
 # date = '20220323'
 # hour = '15h'
-date = '20220709'
-hour = '11h'
+# date = '20220709'
+# hour = '11h'
 # vertical_ref = 'IGN69'#'WL' or 'IGN69'
 vertical_ref = 'WL'#'WL' or 'IGN69'
 
 # configuration corresponding to given results
-# fieldsite = 'wavecams_palavas_cristal'
+fieldsite = 'wavecams_palavas_cristal'
 # cam_names = ['cristal_1', 'cristal_2', 'cristal_3']
+cam_names = ['cristal_2']
 
 # fieldsite = 'wavecams_palavas_stpierre'
 # cam_names = ['st_pierre_1', 'st_pierre_2', 'st_pierre_3']
 
-fieldsite = 'chicama'
-cam_names = ['cam_res_0.5m']
+# fieldsite = 'chicama'
+# cam_names = ['cam_res_0.5m']
 # cam_names = ['cam_res_1.0m']
 
 for cam_name in cam_names:
     print(cam_name)
     # fieldsite = 'wavecams_palavas_cristal_merged'
-    cpu_speeds = ['fast', 'normal', 'slow', 'accurate'] #'fast','normal','slow', 'accurate', 'exact'
+    # cpu_speeds = ['fast', 'normal', 'slow', 'accurate'] #'fast','normal','slow', 'accurate', 'exact'
+    cpu_speeds = ['fast']
     calcdmd = 'standard' # standard or robust
 
     # define WL_ref_IGN69
@@ -331,7 +335,7 @@ for cam_name in cam_names:
 
         # check if ground truth exists:
         # ground_truth_exists = type(results['Dgt']).__module__ == np.__name__
-        ground_truth_comparison = False
+        ground_truth_comparison = True
 
         # affichage
         depth_lims = [0, 8]
@@ -347,7 +351,7 @@ for cam_name in cam_names:
             kalman_error_lims = [0, 1]
             freqlims = [1 / 3, 1 / 15]
             dir_plot = 'plots_all_results'
-            output_dir_plot = f'/home/florent/dev/COCOS/results/{fieldsite}/{cam_name}/{dir_plot}/'
+            output_dir_plot = f'{output_dir}/{dir_plot}/'
             Path(output_dir_plot).mkdir(parents=True, exist_ok=True)
             plot_all_diags(results, output_dir_plot, cpu_speed, depth_lims, diff_depth_lims, kalman_error_lims, freqlims,
                            vertical_ref, resolution)
