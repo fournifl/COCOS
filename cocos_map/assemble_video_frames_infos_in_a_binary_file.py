@@ -15,8 +15,10 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 # sitename
+# site = 'palavas'
+# cam_name = 'cristal_2'
 site = 'palavas'
-cam_name = 'cristal_2'
+cam_name = 'st_pierre_3'
 # site = 'chicama'
 # cam_name = 'cam'
 sitename = f'{site}_{cam_name}'
@@ -29,14 +31,14 @@ hour = '07h'
 data_dir = Path(f'/home/florent/dev/COCOS/data/raw/{site}/{cam_name}/')
 
 # input projected frames
-dir_frames = data_dir.joinpath(f'{date}/{hour}/frames_projected_grey/')
+dir_frames = data_dir.joinpath(f'{date}/{hour}/frames_projected_res_4.0_zmean_0.27_grey/')
 
 ls = sorted(dir_frames.rglob("P*.png"))
 
 # number of used frames
 # n = 900
-n = 200
-# n = None
+# n = 200
+n = None
 if n is not None:
     ls = ls[0:n]
 else:
@@ -50,14 +52,14 @@ height, width = img_0.shape[0:2]
 dt = 0.5
 
 # grid projected coordinates
-f_coords = data_dir.joinpath('coords_projected_grid.pkl')
+f_coords = dir_frames.joinpath('coords_projected_grid.pkl')
 grid_coords = pickle.load(open(f_coords, 'rb'), encoding='latin-1')
 
 dx = round(grid_coords['utmx_projected_grid'][0, 1] - grid_coords['utmx_projected_grid'][0, 0], 2)
 
 # georef
-georef = json.load(open('/home/florent/ownCloud/Projets/SuiviVideo/Palavas/cameras/CAM17/info/georef/georef.json'))
-# georef = json.load(open('/home/florent/ownCloud/Projets/SuiviVideo/Palavas/cameras/CAM21/info/georef/georef.json'))
+# georef = json.load(open('/home/florent/ownCloud/Projets/SuiviVideo/Palavas/cameras/CAM17/info/georef/georef.json'))
+georef = json.load(open('/home/florent/ownCloud/Projets/SuiviVideo/Palavas/cameras/CAM21/info/georef/georef.json'))
 # georef = None
 
 # update grid projection coordinates with camera position
