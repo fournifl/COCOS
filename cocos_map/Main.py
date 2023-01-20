@@ -21,6 +21,7 @@ from Grid      import Grid
 from Plot      import Plot
 from pathlib import Path
 from simple_utils import optional_print as op_print
+from frame_parser import FrameParser
 
 # execution options
 t0 = time.time()
@@ -100,8 +101,12 @@ for cpu_speed in cpu_speeds:
     # PROCESS
     frame_start = 0
     cnt = 0
-    # while frame_start+opts.Nt <= Video.ImgSequence.shape[2]: #(remove <= tt for unlimited analysis)
+
+    # instantiate frame parser
+    fp = FrameParser(opts.Nt)
+
     while frame_start+opts.Nt <= Video.n_frames:
+
         print(f'frame_start: {frame_start}')
         op_print('\n --------------- START Update #{:} ---------------\n'.format(cnt+1))
         t_real_start    = time.time()
@@ -109,7 +114,7 @@ for cpu_speed in cpu_speeds:
         # make timestamps of frame sequence
         dmd.get_times(Video, frame_start, frame_start+opts.Nt)
         # build video matrix
-        dmd.get_Xvid(Video, frame_start, frame_start+opts.Nt)
+        dmd.get_Xvid(Video, frame_start, frame_start+opts.Nt, fp)
         try:
             # get Dynamic Modes
             dmd.get_dynamic_modes()
