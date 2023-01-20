@@ -17,7 +17,6 @@ from mpl_toolkits.mplot3d import axes3d
 #from fbpca import pca as fbsvd
 import matplotlib.pyplot as plt
 from simple_utils import optional_print as op_print
-from simple_utils import assemble_frames_paths_into_3d_array
 
 #import dask.array as da
 #from dask.array.linalg import svd_compressed as dasvd
@@ -76,7 +75,7 @@ class DMD():
             self.t  = self.t[:-1]
 
     # get video matrix Xvid
-    def get_Xvid(self, Video, start, stop):
+    def get_Xvid(self, Video, start, stop, fp):
 
         def minmax_norm(self,data):
             op_print('   minmax normalize video...')
@@ -171,7 +170,8 @@ class DMD():
         l           = stop-start
 
         # get video fragment
-        frames_3d_array, length_video_segment = assemble_frames_paths_into_3d_array(Video.ls_frames, start, stop, Video.m, Video.n, Video.n_frames)
+        frames_3d_array, length_video_segment = fp.assemble_frames_paths_into_3d_array(Video.ls_frames, start, stop,
+                                                                                    Video.m, Video.n, Video.n_frames)
         self.Xvid = np.reshape(frames_3d_array, (self.m*self.n, length_video_segment), order="F").astype('float32')
 
         # fill pixle timeseries only containing 0s and nans with nans
