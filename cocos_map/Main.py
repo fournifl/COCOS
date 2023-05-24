@@ -28,23 +28,27 @@ t0 = time.time()
 plot_results = False
 save_results = True
 # cpu_speeds = ['fast', 'normal', 'slow', 'accurate'] #'fast','normal','slow', 'accurate', 'exact'
-cpu_speeds = ['fast'] #'fast','normal','slow', 'accurate', 'exact'
+# cpu_speeds = ['fast'] #'fast','normal','slow', 'accurate', 'exact'
 calcmdmd = 'standard' # standard or robust
 
 # Fieldsite
-fieldsite = 'wavecams_palavas_cristal'
+# fieldsite = 'wavecams_palavas_cristal'
 # fieldsite = 'wavecams_palavas_cristal_merged'
-# fieldsite = 'wavecams_palavas_stpierre'
+fieldsite = 'wavecams_palavas_stpierre'
 # fieldsite = 'chicama'
 # ~ fieldsite = 'narrabeen'
-cam_name = 'cristal_2'
-# cam_name = 'st_pierre_3'
+# cam_name = 'cristal_2'
+cam_name = 'st_pierre_3'
 # cam_name = 'cristal_merged'
 # cam_name = 'cam'
 
 # date, hour of video frames
 date = '20220314'
 hour = '07h'
+
+# resolution bathymetry grid
+# grid_resolutions_bathy = [20, 15, 12, 10, 8, 6, 4]
+grid_resolutions_bathy = [8]
 
 # output directory
 output_dir = f'../results/{fieldsite}/{cam_name}/{date}/{hour}/'
@@ -55,8 +59,12 @@ Video, PlotLims = Data.get_Video(fieldsite, cam_name, date, hour)
 
 
 # set options
-for cpu_speed in cpu_speeds:
-    opts = Options(Video, CPU_speed=cpu_speed, calcmdmd=calcmdmd, parallel_flag=True, gc_kernel_sampnum=80, f_scale=0.012)
+# for cpu_speed in cpu_speeds:
+for grid_resolution_bathy in grid_resolutions_bathy:
+
+    # opts = Options(Video, CPU_speed=cpu_speed, calcmdmd=calcmdmd, parallel_flag=True, gc_kernel_sampnum=80, f_scale=0.012)
+    opts = Options(Video, grid_dx=grid_resolution_bathy, calcmdmd=calcmdmd, parallel_flag=True, gc_kernel_sampnum=80,
+                   f_scale=0.012)
     # opts = Options(Video, CPU_speed='fast', parallel_flag=True, gc_kernel_sampnum=80, f_scale=0.012)
     # opts = Options(Video, CPU_speed='fast', parallel_flag=True, gc_kernel_sampnum=80, f_scale=0.012, calcdmd='robust')
     # opts = Options(Video, CPU_speed = 'slow', parallel_flag = True, gc_kernel_sampnum = 80, f_scale    = 0.012)
@@ -202,7 +210,7 @@ for cpu_speed in cpu_speeds:
         numrows = np.asarray(grid.Numrows)
         numcols = np.asarray(grid.Numcols)
         # save in npz compressed format
-        np.savez_compressed(f'{output_dir}/results_CPU_speed_{opts.CPU_speed}_calcdmd_{opts.calcdmd}_exec_time_'
+        np.savez_compressed(f'{output_dir}/results_grid_res_{grid_resolution_bathy}_calcdmd_{opts.calcdmd}_exec_time_'
                             f'{exec_time}_s', t_iter=t_iter, Dk=Dk, Uk=Uk, Vk=Vk, Cxk=Cxk, Cyk=Cyk, Cxy_omega=Cxy_omega,
                             Dgt=Dgt, grid_dx=grid.dx, grid_X=grid.X, grid_Y=grid.Y, grid_Rows_ctr=grid.Rows_ctr,
                             grid_Cols_ctr=grid.Cols_ctr,
