@@ -21,7 +21,7 @@ def get_grid_resolution(results):
 
 
 def plot_bathy(results, output_dir_plot, depth_lims, diff_depth_lims, emprise, vertical_ref,
-                   resolution, ground_truth_comparison=None):
+                   resolution, proj_imgs_res, ground_truth_comparison=None):
     n_iter = results['t_iter'].size
 
     # vertical_shift
@@ -68,8 +68,8 @@ def plot_bathy(results, output_dir_plot, depth_lims, diff_depth_lims, emprise, v
             ax[2].set_xlim([emprise[0], emprise[1]])
             ax[2].set_ylim([emprise[2], emprise[3]])
             # fig.savefig(Path(output_dir_plot).joinpath(basename + '_' + '%02d' %k + '.jpg'))
-            fig.savefig(Path(output_dir_plot).joinpath(f'bathy_result_with_groundtruth_cpu_speed_{cpu_speed}_k_{k}_vertical_ref_'
-                                                       f'{vertical_ref}_res_{resolution}' + '.jpg'))
+            fig.savefig(Path(output_dir_plot).joinpath(f'bathy_result_with_groundtruth_res_{resolution}m_k_{k}_'
+                                                       f'vertical_ref_{vertical_ref}_input_res_{proj_imgs_res}'+'.jpg'))
             plt.close('all')
         else:
             fig, ax = plt.subplots(figsize=(20, 10))
@@ -83,13 +83,13 @@ def plot_bathy(results, output_dir_plot, depth_lims, diff_depth_lims, emprise, v
             ax.set_xlim([emprise[0], emprise[1]])
             ax.set_ylim([emprise[2], emprise[3]])
             # fig.savefig(Path(output_dir_plot).joinpath(basename + '_' + '%02d' % k + '.jpg'))
-            fig.savefig(Path(output_dir_plot).joinpath(f'bathy_result_cpu_speed_{cpu_speed}_k_{k}_vertical_ref_'
-                                                       f'{vertical_ref}_res_{resolution}' + '.jpg'))
+            fig.savefig(Path(output_dir_plot).joinpath(f'bathy_result_res_{resolution}m_k_{k}_vertical_ref_'
+                                                       f'{vertical_ref}_input_res_{proj_imgs_res}' + '.jpg'))
             plt.close('all')
 
 
-def plot_all_diags(results, output_dir_plot, cpu_speed, depth_lims, diff_depth_lims, kalman_error_lims, freqlims,
-                   vertical_ref, resolution):
+def plot_all_diags(results, output_dir_plot, resolution, depth_lims, diff_depth_lims, kalman_error_lims, freqlims,
+                   vertical_re, plot_only_last_iteration=True):
     depth_rmse = np.array([])
     depth_debiased_rmse = np.array([])
     depth_bias = np.array([])
@@ -103,6 +103,12 @@ def plot_all_diags(results, output_dir_plot, cpu_speed, depth_lims, diff_depth_l
     color4 = 'tab:brown'
     color5 = 'tab:orange'
 
+    # define iteration plots
+    if plot_only_last_iteration:
+        iterations_plot = [n_iter - 1]
+    else:
+        iterations_plot = range(n_iter)
+
     for k in range(n_iter):
         diff_depth = results['Dk'][k] - results['Dgt']
         depth_bias = np.append(depth_bias, np.nanmean(diff_depth))
@@ -113,6 +119,7 @@ def plot_all_diags(results, output_dir_plot, cpu_speed, depth_lims, diff_depth_l
         iteration_number = np.append(iteration_number, k)
         iteration_time = np.append(iteration_time, results['t_shift_k'][k])
 
+    for k in iterations_plot:
         fig, ax = plt.subplots(2, 5, figsize=(25, 12))
 
         # depth
@@ -225,8 +232,8 @@ def plot_all_diags(results, output_dir_plot, cpu_speed, depth_lims, diff_depth_l
         ax[1, 4].set_xlabel('omega [rad/s]')
 
         # fig.savefig(Path(output_dir_plot).joinpath(basename + '_' + '%02d' % k + '.jpg'))
-        fig.savefig(Path(output_dir_plot).joinpath(f'bathy_result_k_{k}_cpu_speed_{cpu_speed}_vertical_ref_'
-                                                   f'{vertical_ref}_res_{resolution}' + '.jpg'))
+        fig.savefig(Path(output_dir_plot).joinpath(f'bathy_results_res_{resolution}m_k_{k}_vertical_ref_'
+                                                   f'{vertical_ref}_input_res_{proj_imgs_res}' + '.jpg'))
         plt.close('all')
 
 
@@ -243,23 +250,31 @@ hour = '07h'
 vertical_ref = 'WL'#'WL' or 'IGN69'
 
 # configuration corresponding to given results
-fieldsite = 'wavecams_palavas_cristal'
+# fieldsite = 'wavecams_palavas_cristal'
 # cam_names = ['cristal_1', 'cristal_2', 'cristal_3']
-cam_names = ['cristal_2']
+# cam_names = ['cristal_2']
 
-# fieldsite = 'wavecams_palavas_stpierre'
+fieldsite = 'wavecams_palavas_stpierre'
 # cam_names = ['st_pierre_1', 'st_pierre_2', 'st_pierre_3']
+cam_names = ['st_pierre_3']
 
 # fieldsite = 'chicama'
 # cam_names = ['cam_res_0.5m']
 # cam_names = ['cam_res_1.0m']
 
+# resolution of input projected images
+proj_imgs_res = 1.0
+
+# bathy grid resolution
+# bathy_grid_resolutions = [20, 15, 12, 10, 8, 6, 4]
+bathy_grid_resolutions = [15, 8, 6]
+calcdmd = 'standard' # standard or robust
+
 for cam_name in cam_names:
     print(cam_name)
     # fieldsite = 'wavecams_palavas_cristal_merged'
     # cpu_speeds = ['fast', 'normal', 'slow', 'accurate'] #'fast','normal','slow', 'accurate', 'exact'
-    cpu_speeds = ['fast']
-    calcdmd = 'standard' # standard or robust
+    # cpu_speeds = ['fast']
 
     # define WL_ref_IGN69
     if date == '20220314':
@@ -267,11 +282,13 @@ for cam_name in cam_names:
     elif date == '20220323':
         WL_ref_IGN69 = 0.19 - 0.307
 
-    for cpu_speed in cpu_speeds:
+    # for cpu_speed in cpu_speeds:
+    for bathy_grid_resolution in bathy_grid_resolutions:
         # load results
-        output_dir = f'/home/florent/dev/COCOS/results/{fieldsite}/{cam_name}/{date}/{hour}/'
+        output_dir = f'/home/florent/dev/COCOS/results/{fieldsite}/{cam_name}/{date}/{hour}/from_proj_frames_res_{proj_imgs_res}m/'
         try:
-            f_results = glob(output_dir + f'/results_CPU_speed_{cpu_speed}_calcdmd_{calcdmd}_exec_time_*.npz')[0]
+            # f_results = glob(output_dir + f'/results_CPU_speed_{cpu_speed}_calcdmd_{calcdmd}_exec_time_*.npz')[0]
+            f_results = glob(output_dir + f'/results_grid_res_{bathy_grid_resolution}_calcdmd_{calcdmd}_exec_time_*.npz')[0]
         except IndexError:
             continue
 
@@ -338,7 +355,7 @@ for cam_name in cam_names:
         ground_truth_comparison = True
 
         # affichage
-        depth_lims = [0, 8]
+        depth_lims = [0, 6]
         diff_depth_lims = [-1.5, 1.5]
 
         if plot_only_bathy:
@@ -346,12 +363,12 @@ for cam_name in cam_names:
             output_dir_plot = f'{output_dir}/{dir_plot}/'
             Path(output_dir_plot).mkdir(parents=True, exist_ok=True)
             plot_bathy(results, output_dir_plot, depth_lims, diff_depth_lims, emprise_plot, vertical_ref,
-                       resolution, ground_truth_comparison=ground_truth_comparison)
+                       bathy_grid_resolution, proj_imgs_res, ground_truth_comparison=ground_truth_comparison)
         if plot_all_results * ground_truth_comparison:
             kalman_error_lims = [0, 1]
             freqlims = [1 / 3, 1 / 15]
             dir_plot = 'plots_all_results'
             output_dir_plot = f'{output_dir}/{dir_plot}/'
             Path(output_dir_plot).mkdir(parents=True, exist_ok=True)
-            plot_all_diags(results, output_dir_plot, cpu_speed, depth_lims, diff_depth_lims, kalman_error_lims, freqlims,
-                           vertical_ref, resolution)
+            plot_all_diags(results, output_dir_plot, bathy_grid_resolution, depth_lims, diff_depth_lims,
+                           kalman_error_lims, freqlims, vertical_ref)
