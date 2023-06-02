@@ -120,42 +120,6 @@ def hemisphere_UTM_checker(utm_zone_string):
     return hemisphere
 
 
-def compute_gathered_grid(grids_x, grids_y):
-    resolutions = {}
-    for i in grids_x.keys():
-        xmin_tmp = np.min(grids_x[i])
-        xmax_tmp = np.max(grids_x[i])
-        ymin_tmp = np.min(grids_y[i])
-        ymax_tmp = np.max(grids_y[i])
-        resolution_tmp = np.around(grids_x[i][0, 1] - grids_x[i][0, 0], decimals=2)
-        resolutions[i] = np.around(resolution_tmp, decimals=2)
-        print(f'resolution: {resolution_tmp}')
-
-        if i == 0:
-            xmin = xmin_tmp
-            xmax = xmax_tmp
-            ymin = ymin_tmp
-            ymax = ymax_tmp
-            resolution = resolution_tmp
-
-        else:
-            if xmin > xmin_tmp:
-                xmin = xmin_tmp
-            if xmax < xmax_tmp:
-                xmax = xmax_tmp
-            if ymin > ymin_tmp:
-                 ymin = ymin_tmp
-            if ymax < ymax_tmp:
-                ymax = ymax_tmp
-            # keep coarser resolution
-            if resolution > resolution_tmp:
-                resolution = resolution_tmp
-    x = np.arange(xmin, xmax, resolution)
-    y = np.arange(ymin, ymax, resolution)
-    X, Y = np.meshgrid(x, y)
-    return X, Y, resolution, resolutions
-
-
 def transform_pixel_array_to_real(px, py, px_w, px_h, rot1, rot2, xoffset, yoffset):
     """
     Transform pixel ccordinate(s) to real world coordinate(s), based on upper left coordinate of tiff file being treated.
@@ -198,6 +162,10 @@ def interpolate_results_on_same_grid(tif_files, interp_method):
 
     grids_x = {}
     grids_y = {}
+    xmin = {}
+    xmax = {}
+    ymin = {}
+    ymax = {}
     data = {}
     for i, tif_file in enumerate(tif_files):
         ds = gdal.Open(tif_file, gdal.GA_ReadOnly)
@@ -205,6 +173,10 @@ def interpolate_results_on_same_grid(tif_files, interp_method):
 
         # Read the array and the transformation
         arr = ds.ReadAsArray()
+
+        # extent area
+        import georaster
+        xmin[i], xmax[i], ymin[i], ymax[i] = georaster.SingleBandRaster(tif_file, load_data=False).extent
 
         # corner coordinates and pixel width
         xoffset, px_w, rot1, yoffset, rot2, px_h = ds.GetGeoTransform()
@@ -219,18 +191,37 @@ def interpolate_results_on_same_grid(tif_files, interp_method):
         grids_y[i] = Y
         data[i] = arr
 
-    # compute gathered grid
-    X, Y, resolution, resolutions = compute_gathered_grid(grids_x, grids_y)
+    # extent gathered
+    for i in range(len(xmin.keys())):
+        if i == 0:
+            xmin_gathered = np.round(xmin[i])
+            ymin_gathered = np.round(ymin[i])
+            xmax_gathered = np.round(xmax[i])
+            ymax_gathered = np.round(ymax[i])
+        else:
+            if xmin[i] < xmin_gathered:
+                xmin_gathered = np.round(xmin[i])
+            if xmax[i] > xmax_gathered:
+                xmax_gathered = np.round(xmax[i])
+            if ymin[i] < ymin_gathered:
+                ymin_gathered = np.round(ymin[i])
+            if ymax[i] > ymax_gathered:
+                ymax_gathered = np.round(ymax[i])
 
     # add central cam data on gathered grid last, as pixel footprint is better compared to lateral cameras
     for i in grids_x.keys():
         values = data[i][:, :].flatten()
         # points = (np.vstack([grids_x[i].flatten(), grids_y[i].flatten()])).T
         # Z = griddata(points, values, (X, Y), method='linear')
+
         X, Y, Z = interpolate_to_grid(grids_x[i].flatten(), grids_y[i].flatten(), values,
-                                       interp_type=interp_method, gamma=10, minimum_neighbors=1, hres=resolution,
-                                       search_radius=8, boundary_coords={'west': X.min(), 'south': Y.min(),
-                                                                          'east': X.max(), 'north': Y.max()})
+                                       interp_type=interp_method, gamma=0.25, minimum_neighbors=1, hres=8,
+                                       search_radius=8, boundary_coords={'west': xmin_gathered, 'south': ymin_gathered,
+                                                                          'east': xmax_gathered, 'north': ymax_gathered})
+        print('pouet')
+        print(X[0, 1] - X[0, 0])
+        print(Y[1, 0] - Y[0, 0])
+
         if i == 0:
             results_Dk_common_grid_gathered = Z
         else:
@@ -410,8 +401,13 @@ if create_merged_tif:
     geotiff_img_file = str(output_dir_merged.joinpath(f'merging_{str_cam_names}_{date}_{hour}_interp_{interp_method}.tif'))
     print(geotiff_img_file)
     dst_ds = driver.Create(geotiff_img_file, xsize=X.shape[1], ysize=Y.shape[0], bands=1, eType=gdal.GDT_Float32)
-    dst_ds.SetGeoTransform([np.nanmin(X.min()), (X.max() - X.min()) / X.shape[1], 0,
-                            np.nanmax(Y.max()), 0, (Y.min() - Y.max()) / X.shape[0]])
+
+    # dst_ds.SetGeoTransform([np.nanmin(X.min()), (X.max() - X.min()) / X.shape[1], 0,
+    #                         np.nanmax(Y.max()), 0, (Y.min() - Y.max()) / X.shape[0]])
+    hres = X[0, 1] - X[0, 0]
+    vres = Y[0, 0] - Y[1, 0]
+    dst_ds.SetGeoTransform([np.nanmin(X.min()) - hres/2, hres, 0,
+                            np.nanmax(Y.max()) - vres/2, 0, vres])
     dst_ds.SetProjection(srs.ExportToWkt())
     raster = np.flipud(results_Dk_common_grid_gathered)
     dst_ds.GetRasterBand(1).WriteArray(raster)
