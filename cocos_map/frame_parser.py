@@ -23,7 +23,7 @@ class FrameParser:
         if stop <= n_frames_in_video - 1:
             block = self.frame_bin_size
         else:
-            block = n_frames_in_video - start
+            block = (n_frames_in_video - 1) - start
             stop = n_frames_in_video - 1
 
         # store frames
