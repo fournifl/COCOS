@@ -231,17 +231,28 @@ def interpolate_results_on_same_grid(tif_files, interp_method):
 
 
 # execution options
-create_merged_tif = True
+bathy_grid_resolutions = [8]
+# bathy_grid_resolutions = [5]
+rotated_georef = True
+create_merged_tif = False
 working_dir = Path('/home/florent/Projects/Palavas-les-flots/Surfreef_project/results/')
-date = '20230208'
-hour = '16h'
-# date = '20230422'
+# date = '20220314'
 # hour = '07h'
+# date = '20220323'
+# hour = '15h'
+# date = '20230208'
+# hour = '16h'
+date = '20230422'
+hour = '07h'
 
 # vertical reference of output bathymetry elevation's tif file
 vertical_ref = 'IGN69'#'WL' or 'IGN69'
 
 # specify for each date the water level relative to IGN69
+if date == '20220314':
+    WL_ref_IGN69 = 0.293
+if date == '20220323':
+    WL_ref_IGN69 = -0.116
 if date == '20230208':
     WL_ref_IGN69 = 0.112
 if date == '20230422':
@@ -255,48 +266,43 @@ elif vertical_ref == 'IGN69':
 
 # configuration corresponding to given results
 fieldsite = 'wavecams_palavas_stpierre'
-cam_names = ['St_Pierre_3', 'St_Pierre_2']
+# cam_names = ['St_Pierre_3', 'St_Pierre_2']
+cam_names = ['St_Pierre_3']
 
-# georefs rotated
-georefs_rotated = {}
+# georefs
+georefs = {}
 for cam_name in cam_names:
-    georefs_rotated[cam_name] = f'/home/florent/Projects/Palavas-les-flots/{cam_name}/info/georef_local_rotated/' \
-                                f'georef.json'
+    if rotated_georef:
+        georefs[cam_name] = f'/home/florent/Projects/Palavas-les-flots/{cam_name}/info/georef_local_rotated/' \
+                                    f'georef.json'
+    else:
+        georefs[cam_name] = f'/home/florent/Projects/Palavas-les-flots/{cam_name}/info/georef/georef.json'
 
-# resolution of input projected images
-proj_imgs_res = 1.0
-
-# bathy grid resolutions
-bathy_grid_resolutions = [8]
 calcdmd = 'standard' # standard or robust
 
 tif_files = []
 
 for cam_name in cam_names:
     print(cam_name)
-    # georef rotated
-    georef_rotated = georefs_rotated[cam_name]
+
+    # get camera's georef
+    georef = georefs[cam_name]
 
     # Reading Geo System
     Grid_Coordinate_System, UTM_zone, Grid_Coordinate_System_Offset, Off_set, Altitude_Datum_Name, \
-        Rotated_system, Rotation_angle = load_rectification_geo_system_2(georef_rotated)
+        Rotated_system, Rotation_angle = load_rectification_geo_system_2(georef)
 
-
-    # for bathy_grid_resolution in bathy_grid_resolutions:
     for bathy_grid_resolution in bathy_grid_resolutions:
         # load results
-        output_dir = Path(str(working_dir), f'{fieldsite}/{cam_name}/{date}/{hour}/')
+        output_dir = Path(str(working_dir), f'{fieldsite}/{cam_name}/{date}/{hour}')
+        # output_dir = Path(str(working_dir), f'{fieldsite}/{cam_name}/{date}/{hour}/gray_classic_n_320/')
         try:
             f_results = glob(str(output_dir) + f'/results_grid_res_{bathy_grid_resolution}_calcdmd_{calcdmd}_exec_time_*.npz')[0]
         except IndexError:
-            print('pouet')
+            print(f'no bathymetry found at resolution {bathy_grid_resolution} m. Please check this.')
             continue
         results = np.load(f_results)
         basename = Path(f_results).stem
-
-        grid_x_rot = results['grid_X'] - Grid_Coordinate_System_Offset[0]
-        grid_y_rot = results['grid_Y'] - Grid_Coordinate_System_Offset[1]
-
     # dst file format, driver
     fileformat = "GTiff"
     driver = gdal.GetDriverByName(fileformat)
@@ -316,32 +322,42 @@ for cam_name in cam_names:
     mask = binary_dilation(mask)
     z[np.isnan(mask)] = np.nan
 
-    # derotating z
-    z = np.flipud(z)
-    derot_z = rotateAndScale(z, scaleFactor=1, degreesCCW=-np.rad2deg(-Rotation_angle))
+    if rotated_georef:
+        grid_x = results['grid_X'] - Grid_Coordinate_System_Offset[0]
+        grid_y = results['grid_Y'] - Grid_Coordinate_System_Offset[1]
 
-    # apply mask of 0 values
-    derot_z[derot_z == 0] = np.nan
+        # derotating z
+        z = np.flipud(z)
+        derot_z = rotateAndScale(z, scaleFactor=1, degreesCCW=-np.rad2deg(-Rotation_angle))
 
-    # transform water depth to an elevation relative to vertical reference
-    derot_z = - (derot_z + vertical_shift_Dk)
+        # apply mask of 0 values
+        derot_z[derot_z == 0] = np.nan
 
-    # derotating grid bounding box coordinates
-    x_min = grid_x_rot.min()
-    x_max = grid_x_rot.max()
-    y_min = grid_y_rot.min()
-    y_max = grid_y_rot.max()
-    xx = np.array([x_min, x_min, x_max, x_max])
-    yy = np.array([y_min, y_max, y_min, y_max])
-    grid_bbox = np.array([xx, yy]).transpose()
-    rotated_grid_bbox = rotate_vector(grid_bbox, -Rotation_angle)  # negative angle to come back
-    xx = np.array([np.nanmin(rotated_grid_bbox[:, 0]), np.nanmax(rotated_grid_bbox[:, 0])])
-    yy = np.array([np.nanmin(rotated_grid_bbox[:, 1]), np.nanmax(rotated_grid_bbox[:, 1])])
+        # transform water depth to an elevation relative to vertical reference
+        derot_z = - (derot_z + vertical_shift_Dk)
+        z = derot_z
 
-    # Applying off_set
-    xx = Grid_Coordinate_System_Offset[0] + xx.transpose()
-    yy = Grid_Coordinate_System_Offset[1] + yy.transpose()
+        # derotating grid bounding box coordinates
+        x_min = grid_x.min()
+        x_max = grid_x.max()
+        y_min = grid_y.min()
+        y_max = grid_y.max()
+        xx = np.array([x_min, x_min, x_max, x_max])
+        yy = np.array([y_min, y_max, y_min, y_max])
+        grid_bbox = np.array([xx, yy]).transpose()
+        rotated_grid_bbox = rotate_vector(grid_bbox, -Rotation_angle)  # negative angle to come back
+        xx = np.array([np.nanmin(rotated_grid_bbox[:, 0]), np.nanmax(rotated_grid_bbox[:, 0])])
+        yy = np.array([np.nanmin(rotated_grid_bbox[:, 1]), np.nanmax(rotated_grid_bbox[:, 1])])
 
+        # Applying off_set
+        xx = Grid_Coordinate_System_Offset[0] + xx.transpose()
+        yy = Grid_Coordinate_System_Offset[1] + yy.transpose()
+
+    else:
+        grid_x = results['grid_X']
+        grid_y = results['grid_Y']
+        z = np.flipud(z)
+        z = - (z + vertical_shift_Dk)
     # initialize spatial reference system
     srs = osr.SpatialReference()
 
@@ -363,16 +379,21 @@ for cam_name in cam_names:
     geotiff_img_file = f_results.replace('.npz', '.tif')
     tif_files.append(geotiff_img_file)
 
-    dst_ds = driver.Create(geotiff_img_file, xsize=derot_z.shape[1], ysize=derot_z.shape[0], bands=1,
+    dst_ds = driver.Create(geotiff_img_file, xsize=z.shape[1], ysize=z.shape[0], bands=1,
                            eType=gdal.GDT_Float32)
-
-    dst_ds.SetGeoTransform([np.nanmin(xx.min()), (xx.max() - xx.min()) / derot_z.shape[1], 0,
-                            np.nanmax(yy.max()), 0, (yy.min() - yy.max()) / derot_z.shape[0]])
+    if rotated_georef:
+        dst_ds.SetGeoTransform([np.nanmin(xx.min()), (xx.max() - xx.min()) / z.shape[1], 0,
+                                np.nanmax(yy.max()), 0, (yy.min() - yy.max()) / z.shape[0]])
+    else:
+        hres = grid_x[0, 1] - grid_x[0, 0]
+        vres = grid_y[0, 0] - grid_y[1, 0]
+        dst_ds.SetGeoTransform([np.nanmin(grid_x.min()) - hres / 2, hres, 0,
+                                np.nanmax(grid_y.max()) - vres / 2, 0, vres])
     dst_ds.SetProjection(srs.ExportToWkt())
 
     # remove nan values
     # derot_z[np.isnan(derot_z)] = 0
-    raster = derot_z
+    raster = z
     dst_ds.GetRasterBand(1).WriteArray(raster)
 
     # Once we're done, close properly the dataset
@@ -386,7 +407,7 @@ if create_merged_tif:
     output_dir_merged.mkdir(parents=True, exist_ok=True)
 
     # merge results
-    interp_method = 'linear' # barnes, linear, cubic
+    interp_method = 'barnes' # barnes, linear, cubic
     X, Y, results_Dk_common_grid_gathered, results_Dk_common_grid = interpolate_results_on_same_grid(tif_files,
                                                                                                      interp_method)
 
